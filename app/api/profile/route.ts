@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getFingerprint } from "@/lib/fingerprint";
+import { getFingerprint, getTelegramId } from "@/lib/fingerprint";
 import { rateLimit } from "@/lib/ratelimit";
 import type { VideoDTO } from "@/types";
 
@@ -8,8 +8,11 @@ export async function GET(req: NextRequest) {
   const limited = await rateLimit(req);
   if (limited) return limited;
 
+  const telegramId = getTelegramId(req);
   const fp = getFingerprint(req);
-  const user = await db.user.findUnique({ where: { ip_fingerprint: fp } });
+  const user = telegramId
+    ? await db.user.findUnique({ where: { telegram_id: telegramId } })
+    : await db.user.findUnique({ where: { ip_fingerprint: fp } });
 
   if (!user) {
     return NextResponse.json({
@@ -49,7 +52,8 @@ export async function GET(req: NextRequest) {
   }));
 
   return NextResponse.json({
-    username: "Anonymous",
+    username: user.username ?? "Anonymous",
+    telegram_id: user.telegram_id ? String(user.telegram_id) : null,
     is_premium: user.is_premium,
     saved_videos,
     like_count: likeCount,
