@@ -25,6 +25,8 @@ interface VideoCardProps {
   video: VideoDTO;
   index: number;
   onVisible?: (index: number) => void;
+  muted?: boolean;
+  onMuteToggle?: () => void;
 }
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -62,7 +64,7 @@ function formatViews(n: number): string {
 }
 
 export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
-  function VideoCard({ video, index, onVisible }, ref) {
+  function VideoCard({ video, index, onVisible, muted = true, onMuteToggle }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [shareOpen, setShareOpen] = useState(false);
@@ -94,6 +96,11 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         el.pause();
       }
     }, [isVisible, index, onVisible]);
+
+    // Sync muted state — React doesn't update the muted attribute imperatively
+    useEffect(() => {
+      if (videoRef.current) videoRef.current.muted = muted;
+    }, [muted]);
 
     // Expose pause handle to parent for cleanup
     useImperativeHandle(ref, () => ({
@@ -139,7 +146,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           ref={videoRef}
           src={`/api/redgifs/${video.reddit_id}`}
           autoPlay
-          muted
+          muted={muted}
           loop
           playsInline
           // preload="auto" is set below dynamically via data-attr to signal intent
@@ -152,6 +159,29 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
         {/* Bottom gradient overlay */}
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
+
+        {/* Mute / unmute button */}
+        {onMuteToggle && (
+          <button
+            onClick={onMuteToggle}
+            className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-black/40 flex items-center justify-center text-white backdrop-blur-sm"
+            aria-label={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path d="M11 5L6 9H2v6h4l5 4V5z" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            )}
+          </button>
+        )}
 
         {/* Bottom-left: title + category + views */}
         <div className="absolute bottom-6 left-4 right-20 z-10">

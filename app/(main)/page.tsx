@@ -9,6 +9,7 @@ import { VideoFeedSkeleton } from "@/components/ui/Skeleton";
 
 export default function FeedPage() {
   const [activeCategory, setActiveCategory] = useState<string | undefined>();
+  const [muted, setMuted] = useState(true);
   const { categories } = useCategories();
   const { videos, isLoading, isLoadingMore, onVideoVisible } =
     useVideoFeed(activeCategory);
@@ -59,6 +60,8 @@ export default function FeedPage() {
                 video={video}
                 index={index}
                 onVisible={onVideoVisible}
+                muted={muted}
+                onMuteToggle={() => setMuted((m) => !m)}
               />
             ))}
           </AnimatePresence>
