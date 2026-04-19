@@ -137,7 +137,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         {/* Video */}
         <video
           ref={videoRef}
-          src={video.url}
+          src={`/api/redgifs/${video.reddit_id}`}
           autoPlay
           muted
           loop
