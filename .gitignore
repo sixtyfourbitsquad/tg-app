@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+build/
+dist-seed/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Secrets
+secrets/
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# SSH / key files
+key.txt
+key.txt.pub
+*.pem
+id_rsa
+id_ed25519
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

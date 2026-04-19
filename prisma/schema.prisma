@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String       @id @default(cuid())
+  ip_fingerprint String       @unique
+  is_premium     Boolean      @default(false)
+  created_at     DateTime     @default(now())
+
+  likes          Like[]
+  saves          Save[]
+  watch_events   WatchEvent[]
+
+  @@index([ip_fingerprint])
+  @@map("users")
+}
+
+model Category {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  slug   String  @unique
+  videos Video[]
+
+  @@map("categories")
+}
+
+model Video {
+  id          String   @id @default(cuid())
+  url         String
+  thumbnail   String
+  title       String
+  category_id String
+  duration    Int      @default(0)
+  views       Int      @default(0)
+  reddit_id   String?  @unique
+  created_at  DateTime @default(now())
+
+  category     Category     @relation(fields: [category_id], references: [id])
+  likes        Like[]
+  saves        Save[]
+  watch_events WatchEvent[]
+
+  @@index([category_id])
+  @@index([created_at])
+  @@index([views])
+  @@map("videos")
+}
+
+model Like {
+  user_id  String
+  video_id String
+
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [video_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, video_id])
+  @@map("likes")
+}
+
+model Save {
+  user_id  String
+  video_id String
+
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [video_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, video_id])
+  @@map("saves")
+}
+
+model WatchEvent {
+  id         String   @id @default(cuid())
+  user_id    String
+  video_id   String
+  watch_time Int      @default(0)
+  completed  Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [video_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([video_id])
+  @@map("watch_events")
+}
+
+model PipelineLog {
+  id             String   @id @default(cuid())
+  status         String
+  videos_fetched Int      @default(0)
+  errors         Json?
+  ran_at         DateTime @default(now())
+
+  @@index([ran_at])
+  @@map("pipeline_logs")
+}

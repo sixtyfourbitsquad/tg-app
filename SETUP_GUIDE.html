@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NFWS App — Complete Setup Guide</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg-card: #111111;
+    --bg-code: #161616;
+    --border: rgba(255,255,255,0.07);
+    --accent: #ff3b5c;
+    --accent-dim: rgba(255,59,92,0.12);
+    --text: #e8e8e8;
+    --muted: #666;
+    --green: #3dd68c;
+    --blue: #60a5fa;
+    --purple: #c084fc;
+    --sidebar-w: 260px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    display: flex;
+  }
+
+  /* ── Sidebar ──────────────────────────────────────────── */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 0 40px;
+    z-index: 100;
+  }
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .sidebar-logo { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo span {
+    font-size: 18px; font-weight: 700;
+    background: linear-gradient(135deg,#ff3b5c,#ff6b35);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .sidebar-logo p { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .nav-section {
+    padding: 6px 20px 4px; font-size: 10px; font-weight: 700;
+    letter-spacing: .1em; color: var(--muted); text-transform: uppercase; margin-top: 10px;
+  }
+  #sidebar a {
+    display: block; padding: 6px 20px; font-size: 13px; color: #999;
+    text-decoration: none; border-left: 2px solid transparent; transition: all .15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  #sidebar a:hover { color: var(--text); background: rgba(255,255,255,.04); }
+  #sidebar a.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent-dim); }
+
+  /* ── Main ─────────────────────────────────────────────── */
+  #main { margin-left: var(--sidebar-w); flex: 1; max-width: 860px; padding: 48px 56px 120px; }
+
+  .section { margin-bottom: 72px; padding-top: 8px; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .part-badge {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px;
+    background: var(--accent-dim); color: var(--accent);
+    font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .section-header h2 { font-size: 21px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+
+  /* ── Hero ─────────────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg,rgba(255,59,92,.08) 0%,rgba(255,107,53,.04) 100%);
+    border: 1px solid rgba(255,59,92,.2); border-radius: 16px; padding: 36px 40px; margin-bottom: 48px;
+  }
+  .hero h1 {
+    font-size: 30px; font-weight: 800; letter-spacing: -.5px;
+    background: linear-gradient(135deg,#ff3b5c,#ff8c42);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 10px;
+  }
+  .hero p { color: #aaa; font-size: 15px; max-width: 560px; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+  .badge {
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); color: #ccc;
+  }
+
+  /* ── Credentials box ──────────────────────────────────── */
+  .creds-box {
+    background: rgba(61,214,140,.06); border: 1px solid rgba(61,214,140,.25);
+    border-radius: 12px; padding: 20px 24px; margin: 20px 0;
+  }
+  .creds-box h4 {
+    font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--green); margin-bottom: 14px; display: flex; align-items: center; gap: 6px;
+  }
+  .creds-box h4::before { content: '🔐'; font-size: 14px; }
+  .cred-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.04); gap: 12px;
+  }
+  .cred-row:last-child { border-bottom: none; }
+  .cred-label { font-size: 12px; color: var(--muted); width: 160px; flex-shrink: 0; }
+  .cred-value {
+    font-family: 'JetBrains Mono','Fira Code',Consolas,monospace;
+    font-size: 13px; color: #e2e8f0; flex: 1; word-break: break-all;
+  }
+  .cred-copy {
+    flex-shrink: 0; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: rgba(255,255,255,.04); color: #888; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all .15s; white-space: nowrap;
+  }
+  .cred-copy:hover { background: rgba(255,255,255,.08); color: #ccc; }
+  .cred-copy.copied { background: rgba(61,214,140,.12); border-color: rgba(61,214,140,.4); color: var(--green); }
+
+  /* ── Code blocks ──────────────────────────────────────── */
+  .code-wrap { position: relative; margin: 14px 0; }
+
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #1a1a1a; border: 1px solid var(--border);
+    border-bottom: none; border-radius: 10px 10px 0 0; padding: 7px 14px;
+  }
+  .code-lang { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+  .copy-btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: rgba(255,255,255,.04); color: #888; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: all .15s; line-height: 1;
+  }
+  .copy-btn:hover { background: rgba(255,255,255,.08); color: #ccc; border-color: rgba(255,255,255,.15); }
+  .copy-btn.copied { background: rgba(61,214,140,.12); border-color: rgba(61,214,140,.4); color: var(--green); }
+  .copy-btn svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .code-wrap pre {
+    background: var(--bg-code); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; font-size: 13px; line-height: 1.65;
+    font-family: 'JetBrains Mono','Fira Code','Cascadia Code',Consolas,monospace;
+    margin: 0;
+  }
+  .code-wrap.has-header pre { border-radius: 0 0 10px 10px; border-top: none; }
+  pre::-webkit-scrollbar { height: 4px; }
+  pre::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* syntax */
+  .kw  { color: #c084fc; }
+  .str { color: #86efac; }
+  .cmt { color: #4a5568; font-style: italic; }
+  .num { color: #fbbf24; }
+  .cmd { color: #60a5fa; }
+  .env { color: #f97316; }
+  .ok  { color: #3dd68c; }
+  .hi  { color: #fbbf24; font-weight: 600; }  /* highlighted / generated value */
+
+  p code, li code, td code {
+    background: rgba(255,255,255,.06); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 6px; font-size: 12.5px;
+    font-family: 'JetBrains Mono',monospace; color: #e2e8f0;
+  }
+
+  /* ── Callouts ─────────────────────────────────────────── */
+  .callout {
+    display: flex; gap: 12px; padding: 14px 16px; border-radius: 10px;
+    margin: 16px 0; font-size: 13.5px;
+  }
+  .callout-icon { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+  .callout p { margin: 0; }
+  .callout strong { display: block; margin-bottom: 3px; font-size: 13px; }
+  .callout.info    { background: rgba(96,165,250,.08);  border: 1px solid rgba(96,165,250,.2);  color: #93c5fd; }
+  .callout.warn    { background: rgba(251,191,36,.08);  border: 1px solid rgba(251,191,36,.2);  color: #fcd34d; }
+  .callout.success { background: rgba(61,214,140,.08);  border: 1px solid rgba(61,214,140,.2);  color: #6ee7b7; }
+
+  /* ── Steps ────────────────────────────────────────────── */
+  .steps { display: flex; flex-direction: column; gap: 20px; }
+  .step { display: flex; gap: 16px; align-items: flex-start; }
+  .step-num {
+    flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-dim); color: var(--accent);
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  }
+  .step-body h4 { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+  .step-body p  { font-size: 13px; color: #999; margin-bottom: 8px; }
+
+  /* ── Tables ───────────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; margin: 16px 0; border-radius: 10px; border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: rgba(255,255,255,.04); padding: 10px 14px; text-align: left;
+    font-size: 11px; font-weight: 700; letter-spacing: .07em; color: var(--muted);
+    text-transform: uppercase; border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.04); color: #ccc; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,.02); }
+  td:first-child code { color: var(--blue); }
+
+  /* ── Typography ───────────────────────────────────────── */
+  h3 { font-size: 16px; font-weight: 700; color: #e2e8f0; margin: 28px 0 12px; }
+  h3::before { content: '▸ '; color: var(--accent); font-size: 12px; margin-right: 2px; }
+  h4 { font-size: 14px; font-weight: 600; color: #c0c0c0; margin: 20px 0 8px; }
+  p { margin: 10px 0; color: #aaa; }
+  ul, ol { padding-left: 22px; margin: 10px 0; }
+  li { margin: 5px 0; color: #aaa; font-size: 14px; }
+  li strong { color: #ddd; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  a { color: #93c5fd; }
+
+  /* ── Checklist ────────────────────────────────────────── */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04); font-size: 13.5px;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-box {
+    flex-shrink: 0; width: 18px; height: 18px; border: 1.5px solid var(--border);
+    border-radius: 4px; margin-top: 2px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .check-box:hover { border-color: var(--accent); }
+  .check-box.checked { background: var(--accent); border-color: var(--accent); }
+  .check-box.checked::after { content: '✓'; color: #fff; font-size: 11px; font-weight: 700; }
+  .checklist li.done .check-text { text-decoration: line-through; color: var(--muted); }
+
+  /* ── Quick ref ────────────────────────────────────────── */
+  .quick-ref { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .qr-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .qr-card h4 { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  .qr-card h4::before { display: none; }
+  .qr-card pre { background: rgba(0,0,0,.3); border: none; padding: 0; margin: 0; font-size: 12px; }
+
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #main { margin-left: 0; padding: 24px 20px 80px; }
+    .quick-ref { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <span>NFWS App</span>
+    <p>Complete Setup Guide</p>
+  </div>
+  <div class="nav-section">Getting Started</div>
+  <a href="#part1">1 · Prerequisites</a>
+  <a href="#part2">2 · Project Setup</a>
+  <a href="#part3">3 · Database Setup</a>
+  <a href="#part4">4 · Run Locally</a>
+  <div class="nav-section">Integrations</div>
+  <a href="#part5">5 · Reddit API</a>
+  <a href="#part6">6 · Google Cloud Storage</a>
+  <a href="#part7">7 · Pipeline</a>
+  <div class="nav-section">API &amp; Testing</div>
+  <a href="#part8">8 · Test API Endpoints</a>
+  <a href="#part9">9 · Build for Production</a>
+  <div class="nav-section">Deployment</div>
+  <a href="#part10">10 · Deploy to VPS</a>
+  <a href="#part11">11 · Troubleshooting</a>
+  <a href="#part12">12 · Quick Reference</a>
+</nav>
+
+<!-- ══ MAIN ═════════════════════════════════════════════ -->
+<main id="main">
+
+  <div class="hero">
+    <h1>NFWS App — Setup Guide</h1>
+    <p>Complete walkthrough from zero to production. Follow each part in order. Your credentials are pre-filled throughout.</p>
+    <div class="badge-row">
+      <span class="badge">Next.js 16</span>
+      <span class="badge">TypeScript</span>
+      <span class="badge">PostgreSQL 15</span>
+      <span class="badge">Redis 7</span>
+      <span class="badge">Prisma ORM</span>
+      <span class="badge">ffmpeg</span>
+      <span class="badge">GCS</span>
+      <span class="badge">Docker</span>
+    </div>
+  </div>
+
+  <!-- Generated credentials reference -->
+  <div class="creds-box">
+    <h4>Your Generated Credentials</h4>
+    <div class="cred-row">
+      <span class="cred-label">DB Password</span>
+      <span class="cred-value" id="cv-dbpass">zkdtoy1lErD1A7AwDuxX</span>
+      <button class="cred-copy" onclick="copyCred(this,'cv-dbpass')">Copy</button>
+    </div>
+    <div class="cred-row">
+      <span class="cred-label">DB User</span>
+      <span class="cred-value" id="cv-dbuser">nfws_user</span>
+      <button class="cred-copy" onclick="copyCred(this,'cv-dbuser')">Copy</button>
+    </div>
+    <div class="cred-row">
+      <span class="cred-label">DB Name</span>
+      <span class="cred-value" id="cv-dbname">nfws_db</span>
+      <button class="cred-copy" onclick="copyCred(this,'cv-dbname')">Copy</button>
+    </div>
+    <div class="cred-row">
+      <span class="cred-label">NEXTAUTH_SECRET</span>
+      <span class="cred-value" id="cv-auth">dczUi0gC6gYpOCjdf9yTXtDNnStGnEcf5HqxDpjWVzk=</span>
+      <button class="cred-copy" onclick="copyCred(this,'cv-auth')">Copy</button>
+    </div>
+    <div class="cred-row">
+      <span class="cred-label">Redis Password</span>
+      <span class="cred-value" id="cv-redis">TCXi9X9VqjDpq6Eq</span>
+      <button class="cred-copy" onclick="copyCred(this,'cv-redis')">Copy</button>
+    </div>
+    <div class="cred-row">
+      <span class="cred-label">DATABASE_URL</span>
+      <span class="cred-value" id="cv-dburl">postgresql://nfws_user:zkdtoy1lErD1A7AwDuxX@localhost:5432/nfws_db</span>
+      <button class="cred-copy" onclick="copyCred(this,'cv-dburl')">Copy</button>
+    </div>
+  </div>
+
+  <!-- ════ PART 1 ════ -->
+  <div class="section" id="part1">
+    <div class="section-header">
+      <div class="part-badge">1</div>
+      <h2>Prerequisites — Install Once</h2>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">ℹ</span>
+      <div><strong>Before anything else</strong>Install all four tools below, then run the verify block to confirm they work.</div>
+    </div>
+
+    <h3>Node.js 20</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">Ubuntu / Debian</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> -fsSL https://deb.nodesource.com/setup_20.x | <span class="cmd">sudo bash</span> -
+<span class="cmd">sudo apt install</span> -y nodejs</code></pre>
+    </div>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">macOS</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">brew install</span> node@20</code></pre>
+    </div>
+
+    <h3>PostgreSQL 15</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">Ubuntu</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">sudo apt install</span> -y postgresql postgresql-contrib
+<span class="cmd">sudo systemctl start</span> postgresql
+<span class="cmd">sudo systemctl enable</span> postgresql</code></pre>
+    </div>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">macOS</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">brew install</span> postgresql@15
+<span class="cmd">brew services start</span> postgresql@15</code></pre>
+    </div>
+
+    <h3>Redis 7</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">Ubuntu</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">sudo apt install</span> -y redis-server
+<span class="cmd">sudo systemctl start</span> redis
+<span class="cmd">sudo systemctl enable</span> redis</code></pre>
+    </div>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">macOS</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">brew install</span> redis
+<span class="cmd">brew services start</span> redis</code></pre>
+    </div>
+
+    <h3>ffmpeg</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">Ubuntu</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">sudo apt install</span> -y ffmpeg</code></pre>
+    </div>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">macOS</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">brew install</span> ffmpeg</code></pre>
+    </div>
+
+    <h3>Verify all tools</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code>node --version        <span class="cmt"># v20.x.x</span>
+psql --version        <span class="cmt"># psql (PostgreSQL) 15.x</span>
+redis-cli ping        <span class="cmt"># PONG</span>
+ffmpeg -version       <span class="cmt"># ffmpeg version 6.x</span></code></pre>
+    </div>
+  </div>
+
+  <!-- ════ PART 2 ════ -->
+  <div class="section" id="part2">
+    <div class="section-header">
+      <div class="part-badge">2</div>
+      <h2>Project Setup</h2>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Go to the project folder</h4>
+          <div class="code-wrap has-header">
+            <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+            <pre><code><span class="cmd">cd</span> <span class="str">"/home/meow/Work/TELEGRAM BOTS/NFWS TG REDDIT API"</span></code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Install dependencies</h4>
+          <div class="code-wrap has-header">
+            <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+            <pre><code><span class="cmd">npm install</span> --legacy-peer-deps</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Create your <code>.env</code> file</h4>
+          <div class="code-wrap has-header">
+            <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+            <pre><code><span class="cmd">cp</span> .env.example .env
+<span class="cmd">nano</span> .env</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Paste this complete <code>.env</code> — credentials pre-filled</h4>
+          <p>Replace <code>YOUR_REDDIT_CLIENT_ID</code>, <code>YOUR_REDDIT_SECRET</code>, <code>YOUR_GCP_*</code> after setting up those services.</p>
+          <div class="code-wrap has-header">
+            <div class="code-header"><span class="code-lang">.env</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+            <pre><code><span class="env">DATABASE_URL</span>=<span class="str">"postgresql://nfws_user:<span class="hi">zkdtoy1lErD1A7AwDuxX</span>@localhost:5432/nfws_db"</span>
+<span class="env">REDIS_URL</span>=<span class="str">"redis://:<span class="hi">TCXi9X9VqjDpq6Eq</span>@localhost:6379"</span>
+<span class="env">GCP_BUCKET</span>=<span class="str">"YOUR_GCP_BUCKET_NAME"</span>
+<span class="env">GCP_PROJECT_ID</span>=<span class="str">"YOUR_GCP_PROJECT_ID"</span>
+<span class="env">GCP_KEY_FILE</span>=<span class="str">"secrets/gcp-service-account.json"</span>
+<span class="env">REDDIT_CLIENT_ID</span>=<span class="str">"YOUR_REDDIT_CLIENT_ID"</span>
+<span class="env">REDDIT_SECRET</span>=<span class="str">"YOUR_REDDIT_SECRET"</span>
+<span class="env">REDDIT_USER_AGENT</span>=<span class="str">"nfws-bot/1.0 by u/yourusername"</span>
+<span class="env">NEXTAUTH_SECRET</span>=<span class="str">"<span class="hi">dczUi0gC6gYpOCjdf9yTXtDNnStGnEcf5HqxDpjWVzk=</span>"</span>
+<span class="env">NEXTAUTH_URL</span>=<span class="str">"http://localhost:3000"</span>
+<span class="env">PIPELINE_SUBREDDITS</span>=<span class="str">"gifs,realgirls"</span>
+<span class="env">PIPELINE_LIMIT</span>=<span class="str">"25"</span>
+<span class="env">PIPELINE_CRON</span>=<span class="str">"0 */6 * * *"</span>
+<span class="env">NODE_ENV</span>=<span class="str">"development"</span>
+<span class="env">LOG_LEVEL</span>=<span class="str">"debug"</span></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PART 3 ════ -->
+  <div class="section" id="part3">
+    <div class="section-header">
+      <div class="part-badge">3</div>
+      <h2>Database Setup</h2>
+    </div>
+
+    <h3>1 · Create database user and database</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">PostgreSQL shell</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmt"># Enter the PostgreSQL shell as the postgres system user</span>
+<span class="cmd">sudo -u postgres psql</span></code></pre>
+    </div>
+    <p>Once inside <code>psql</code>, run these commands one by one:</p>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">psql</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="kw">CREATE USER</span> nfws_user <span class="kw">WITH PASSWORD</span> <span class="str">'<span class="hi">zkdtoy1lErD1A7AwDuxX</span>'</span>;
+<span class="kw">CREATE DATABASE</span> nfws_db <span class="kw">OWNER</span> nfws_user;
+<span class="kw">GRANT ALL PRIVILEGES ON DATABASE</span> nfws_db <span class="kw">TO</span> nfws_user;
+<span class="kw">\q</span></code></pre>
+    </div>
+
+    <h3>2 · Set Redis password</h3>
+    <p>Open the Redis config and add the password:</p>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">sudo nano</span> /etc/redis/redis.conf
+<span class="cmt"># Find the line: # requirepass foobared</span>
+<span class="cmt"># Change it to:</span>
+requirepass <span class="hi">TCXi9X9VqjDpq6Eq</span>
+
+<span class="cmt"># Save and restart Redis</span>
+<span class="cmd">sudo systemctl restart</span> redis</code></pre>
+    </div>
+    <p>Verify it works:</p>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code>redis-cli -a <span class="hi">TCXi9X9VqjDpq6Eq</span> ping   <span class="cmt"># → PONG</span></code></pre>
+    </div>
+
+    <h3>3 · Generate Prisma client</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">npm run db:generate</span></code></pre>
+    </div>
+
+    <h3>4 · Run migrations (creates all tables)</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">npm run db:migrate</span>
+<span class="cmt"># When asked for migration name, type: init</span></code></pre>
+    </div>
+
+    <h3>5 · Seed 10 test videos</h3>
+    <div class="callout success">
+      <span class="callout-icon">✓</span>
+      <div><strong>No Reddit or GCS needed</strong>Seed loads 10 public-domain videos so you can test the whole UI immediately.</div>
+    </div>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">npm run db:seed</span></code></pre>
+    </div>
+    <p>Expected output:</p>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">output</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="ok">Seeding categories...
+Seeding test videos...
+Seeding test user...
+Seed complete.</span></code></pre>
+    </div>
+
+    <h3>6 · Browse the database (optional)</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">npm run db:studio</span>
+<span class="cmt"># Visual DB browser → http://localhost:5555</span></code></pre>
+    </div>
+  </div>
+
+  <!-- ════ PART 4 ════ -->
+  <div class="section" id="part4">
+    <div class="section-header">
+      <div class="part-badge">4</div>
+      <h2>Run the App Locally</h2>
+    </div>
+
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">npm run dev</span>
+<span class="cmt"># → http://localhost:3000</span></code></pre>
+    </div>
+
+    <h3>Browser test checklist</h3>
+    <ul class="checklist">
+      <li><span class="check-box" onclick="toggleCheck(this)"></span><span class="check-text">Scroll up/down — cards snap full-screen, one per swipe</span></li>
+      <li><span class="check-box" onclick="toggleCheck(this)"></span><span class="check-text">Video plays automatically when 90% visible, pauses when scrolled away</span></li>
+      <li><span class="check-box" onclick="toggleCheck(this)"></span><span class="check-text">Tap category tabs at top — animated underline follows, feed reloads</span></li>
+      <li><span class="check-box" onclick="toggleCheck(this)"></span><span class="check-text">Tap ❤️ — like count animates up, tap again to unlike</span></li>
+      <li><span class="check-box" onclick="toggleCheck(this)"></span><span class="check-text">Tap 📌 — save count animates up</span></li>
+      <li><span class="check-box" onclick="toggleCheck(this)"></span><span class="check-text">Tap 🔗 — share bottom sheet slides up from bottom</span></li>
+      <li><span class="check-box" onclick="toggleCheck(this)"></span><span class="check-text">Scroll to end — spinner appears, more videos load automatically</span></li>
+      <li><span class="check-box" onclick="toggleCheck(this)"></span><span class="check-text">DevTools → Network → Slow 3G → reload — skeleton cards appear</span></li>
+    </ul>
+  </div>
+
+  <!-- ════ PART 5 ════ -->
+  <div class="section" id="part5">
+    <div class="section-header">
+      <div class="part-badge">5</div>
+      <h2>Reddit API Setup</h2>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠</span>
+      <div><strong>Only needed for live pipeline</strong>Skip this and Part 6 if you only want to test with the 10 seeded videos.</div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Create a Reddit App</h4>
+          <p>Go to <a href="https://www.reddit.com/prefs/apps" target="_blank">reddit.com/prefs/apps</a> → <strong>Create App</strong></p>
+          <ul>
+            <li>Type: <strong>script</strong></li>
+            <li>Redirect URI: <code>http://localhost</code></li>
+          </ul>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Copy credentials and paste into <code>.env</code></h4>
+          <div class="code-wrap has-header">
+            <div class="code-header"><span class="code-lang">.env</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+            <pre><code><span class="env">REDDIT_CLIENT_ID</span>=<span class="str">"paste_your_client_id_here"</span>
+<span class="env">REDDIT_SECRET</span>=<span class="str">"paste_your_secret_here"</span>
+<span class="env">REDDIT_USER_AGENT</span>=<span class="str">"nfws-bot/1.0 by u/yourusername"</span>
+<span class="env">PIPELINE_SUBREDDITS</span>=<span class="str">"gifs,nsfw,realgirls"</span></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PART 6 ════ -->
+  <div class="section" id="part6">
+    <div class="section-header">
+      <div class="part-badge">6</div>
+      <h2>Google Cloud Storage Setup</h2>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Create a GCP project</h4>
+          <p>Go to <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> → New Project. Note your Project ID.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Create a Storage bucket</h4>
+          <p>Cloud Storage → Buckets → Create</p>
+          <ul>
+            <li>Name: e.g. <code>nfws-videos-prod</code></li>
+            <li>Access control: Fine-grained</li>
+          </ul>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Create Service Account</h4>
+          <p>IAM &amp; Admin → Service Accounts → Create → Role: <strong>Storage Object Admin</strong></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Download JSON key and place it</h4>
+          <div class="code-wrap has-header">
+            <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+            <pre><code><span class="cmd">mkdir -p</span> secrets
+<span class="cmd">mv</span> ~/Downloads/your-key.json secrets/gcp-service-account.json</code></pre>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <h4>Make bucket publicly readable</h4>
+          <p>GCP Console → your bucket → Permissions → Grant Access → Principal: <code>allUsers</code> → Role: <strong>Storage Object Viewer</strong></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <h4>Update <code>.env</code></h4>
+          <div class="code-wrap has-header">
+            <div class="code-header"><span class="code-lang">.env</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+            <pre><code><span class="env">GCP_BUCKET</span>=<span class="str">"nfws-videos-prod"</span>
+<span class="env">GCP_PROJECT_ID</span>=<span class="str">"your-project-id-12345"</span>
+<span class="env">GCP_KEY_FILE</span>=<span class="str">"secrets/gcp-service-account.json"</span></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PART 7 ════ -->
+  <div class="section" id="part7">
+    <div class="section-header">
+      <div class="part-badge">7</div>
+      <h2>Run the Pipeline</h2>
+    </div>
+
+    <h3>One-shot manual run</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">npm run pipeline:run</span></code></pre>
+    </div>
+    <p>Expected output:</p>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">output</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="ok">{
+  "status": "success",
+  "videos_fetched": 8,
+  "errors": []
+}</span></code></pre>
+    </div>
+
+    <h3>Daemon mode (scheduled)</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">npm run pipeline:scheduler</span>
+<span class="cmt"># Runs every 6 hours — Ctrl+C to stop</span></code></pre>
+    </div>
+
+    <h3>Check pipeline logs via API</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> <span class="str">"http://localhost:3000/api/pipeline"</span> \
+  -H <span class="str">"x-pipeline-token: <span class="hi">dczUi0gC6gYpOCjdf9yTXtDNnStGnEcf5HqxDpjWVzk=</span>"</span> | jq</code></pre>
+    </div>
+  </div>
+
+  <!-- ════ PART 8 ════ -->
+  <div class="section" id="part8">
+    <div class="section-header">
+      <div class="part-badge">8</div>
+      <h2>Test Every API Endpoint</h2>
+    </div>
+
+    <h3>Get a video ID first</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code>VIDEO_ID=$(<span class="cmd">curl</span> -s <span class="str">"http://localhost:3000/api/videos"</span> | jq -r <span class="str">'.videos[0].id'</span>)
+<span class="cmd">echo</span> $VIDEO_ID</code></pre>
+    </div>
+
+    <h3>Health check</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> http://localhost:3000/api/health | jq
+<span class="cmt"># { "status": "ok", "services": { "database": "ok", "redis": "ok" } }</span></code></pre>
+    </div>
+
+    <h3>Videos feed</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> <span class="str">"http://localhost:3000/api/videos"</span> | jq
+<span class="cmd">curl</span> <span class="str">"http://localhost:3000/api/videos?limit=3"</span> | jq
+<span class="cmd">curl</span> <span class="str">"http://localhost:3000/api/videos?category=amateur"</span> | jq</code></pre>
+    </div>
+
+    <h3>Categories</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> http://localhost:3000/api/categories | jq</code></pre>
+    </div>
+
+    <h3>Like / unlike</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> -X POST <span class="str">"http://localhost:3000/api/videos/$VIDEO_ID/like"</span> | jq
+<span class="cmt"># { "liked": true, "count": 1 }  — run again to unlike</span></code></pre>
+    </div>
+
+    <h3>Save / unsave</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> -X POST <span class="str">"http://localhost:3000/api/videos/$VIDEO_ID/save"</span> | jq
+<span class="cmt"># { "saved": true, "count": 1 }  — run again to unsave</span></code></pre>
+    </div>
+
+    <h3>Record a view</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> -X POST <span class="str">"http://localhost:3000/api/videos/$VIDEO_ID/view"</span> \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{"watch_time":45,"completed":false}'</span> | jq
+<span class="cmt"># { "ok": true } — also increments video.views</span></code></pre>
+    </div>
+
+    <h3>Analytics</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> <span class="str">"http://localhost:3000/api/analytics/$VIDEO_ID"</span> | jq</code></pre>
+    </div>
+
+    <h3>Redis cache verification</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmt"># Populate cache</span>
+<span class="cmd">curl</span> <span class="str">"http://localhost:3000/api/videos"</span> > /dev/null
+
+<span class="cmt"># See cached keys</span>
+redis-cli -a <span class="hi">TCXi9X9VqjDpq6Eq</span> KEYS <span class="str">"videos:*"</span>
+
+<span class="cmt"># Read cached value</span>
+redis-cli -a <span class="hi">TCXi9X9VqjDpq6Eq</span> GET <span class="str">"videos:all:initial"</span> | jq
+
+<span class="cmt"># Like a video — cache should be invalidated</span>
+<span class="cmd">curl</span> -X POST <span class="str">"http://localhost:3000/api/videos/$VIDEO_ID/like"</span>
+redis-cli -a <span class="hi">TCXi9X9VqjDpq6Eq</span> GET <span class="str">"videos:all:initial"</span>   <span class="cmt"># → (nil)</span></code></pre>
+    </div>
+
+    <h3>Rate limiting test</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="kw">for</span> i <span class="kw">in</span> $(seq 1 110); <span class="kw">do</span>
+  STATUS=$(<span class="cmd">curl</span> -s -o /dev/null -w <span class="str">"%{http_code}"</span> <span class="str">"http://localhost:3000/api/videos"</span>)
+  <span class="cmd">echo</span> <span class="str">"Request $i: $STATUS"</span>
+<span class="kw">done</span>
+<span class="cmt"># Requests 101-110 return: 429 Too Many Requests</span></code></pre>
+    </div>
+  </div>
+
+  <!-- ════ PART 9 ════ -->
+  <div class="section" id="part9">
+    <div class="section-header">
+      <div class="part-badge">9</div>
+      <h2>Build for Production</h2>
+    </div>
+
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">npm run build</span>   <span class="cmt"># compiles to .next/standalone</span>
+<span class="cmd">npm start</span>        <span class="cmt"># serves on http://localhost:3000</span></code></pre>
+    </div>
+  </div>
+
+  <!-- ════ PART 10 ════ -->
+  <div class="section" id="part10">
+    <div class="section-header">
+      <div class="part-badge">10</div>
+      <h2>Deploy to Ubuntu 22.04 VPS</h2>
+    </div>
+
+    <div class="callout success">
+      <span class="callout-icon">✓</span>
+      <div><strong>Automated option</strong>The deploy script handles everything in one command — Docker, Nginx, SSL, PM2 pipeline.</div>
+    </div>
+
+    <h3>Option A — One-command automated deploy</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash — on your VPS</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">export</span> <span class="env">DOMAIN</span>=<span class="str">"yourdomain.com"</span>
+<span class="cmd">export</span> <span class="env">REPO_URL</span>=<span class="str">"https://github.com/you/your-repo.git"</span>
+<span class="cmd">sudo bash</span> scripts/deploy.sh</code></pre>
+    </div>
+
+    <hr>
+
+    <h3>Option B — Manual step by step</h3>
+
+    <h4>1. Install Docker</h4>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">curl</span> -fsSL https://get.docker.com | sh
+<span class="cmd">sudo systemctl enable</span> docker</code></pre>
+    </div>
+
+    <h4>2. Clone repo and create .env</h4>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">git clone</span> https://github.com/you/your-repo.git /var/www/nfws
+<span class="cmd">cd</span> /var/www/nfws
+<span class="cmd">cp</span> .env.example .env
+<span class="cmd">nano</span> .env  <span class="cmt"># fill in production values (use the credentials above)</span>
+<span class="cmd">mkdir -p</span> secrets  <span class="cmt"># place gcp-service-account.json here</span></code></pre>
+    </div>
+
+    <h4>3. Start containers + run migrations</h4>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">docker compose up</span> -d --build
+<span class="cmd">docker compose exec app</span> npx prisma migrate deploy
+<span class="cmd">docker compose exec app</span> npm run db:seed</code></pre>
+    </div>
+
+    <h4>4. Configure Nginx + SSL</h4>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">sudo apt install</span> -y nginx certbot python3-certbot-nginx
+<span class="cmd">sed</span> <span class="str">"s/YOUR_DOMAIN/yourdomain.com/g"</span> nginx.conf \
+  | <span class="cmd">sudo tee</span> /etc/nginx/sites-available/nfws
+<span class="cmd">sudo ln</span> -s /etc/nginx/sites-available/nfws /etc/nginx/sites-enabled/nfws
+<span class="cmd">sudo nginx -t</span> && <span class="cmd">sudo systemctl reload</span> nginx
+<span class="cmd">sudo certbot</span> --nginx -d yourdomain.com</code></pre>
+    </div>
+
+    <h4>5. Start pipeline scheduler with PM2</h4>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">sudo npm install</span> -g pm2 tsx
+pm2 start tsx --name nfws-pipeline -- pipeline/scheduler.ts
+pm2 save
+pm2 startup   <span class="cmt"># copy + run the printed command</span></code></pre>
+    </div>
+
+    <h3>Monitor on VPS</h3>
+    <div class="code-wrap has-header">
+      <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+      <pre><code><span class="cmd">docker compose ps</span>              <span class="cmt"># container status</span>
+<span class="cmd">docker compose logs</span> -f app     <span class="cmt"># live app logs</span>
+pm2 logs nfws-pipeline         <span class="cmt"># pipeline logs</span>
+<span class="cmd">curl</span> https://yourdomain.com/api/health | jq</code></pre>
+    </div>
+  </div>
+
+  <!-- ════ PART 11 ════ -->
+  <div class="section" id="part11">
+    <div class="section-header">
+      <div class="part-badge">11</div>
+      <h2>Troubleshooting</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Symptom</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr><td><code>npm install</code> peer dep error</td><td>Add <code>--legacy-peer-deps</code></td></tr>
+          <tr><td><code>PrismaClientInitializationError</code></td><td>Check <code>DATABASE_URL</code>; run <code>sudo systemctl status postgresql</code></td></tr>
+          <tr><td>Redis connection refused</td><td><code>redis-cli -a TCXi9X9VqjDpq6Eq ping</code> — if no PONG, restart Redis</td></tr>
+          <tr><td>Redis auth error</td><td>Confirm <code>requirepass TCXi9X9VqjDpq6Eq</code> is set in redis.conf and Redis was restarted</td></tr>
+          <tr><td>Pipeline: 0 videos</td><td>Check Reddit credentials; posts need score ≥ 100 and domain <code>v.redd.it</code></td></tr>
+          <tr><td>GCS upload fails</td><td>Verify <code>secrets/gcp-service-account.json</code> exists; check bucket allUsers permission</td></tr>
+          <tr><td><code>ffmpeg not found</code></td><td><code>sudo apt install ffmpeg</code></td></tr>
+          <tr><td>Nginx 502</td><td><code>docker compose logs app</code> — app container must be healthy</td></tr>
+          <tr><td>SSL cert fails</td><td>Port 80 must be open in GCP firewall; DNS must point to VM IP</td></tr>
+          <tr><td>429 Too Many Requests</td><td>Normal — wait 60 seconds for rate limit window to reset</td></tr>
+          <tr><td>PM2 not running after reboot</td><td>Run <code>pm2 startup</code> and execute the printed command, then <code>pm2 save</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════ PART 12 ════ -->
+  <div class="section" id="part12">
+    <div class="section-header">
+      <div class="part-badge">12</div>
+      <h2>Quick Reference</h2>
+    </div>
+
+    <div class="quick-ref">
+      <div class="qr-card">
+        <h4>Local Dev</h4>
+        <pre><code>npm run dev
+npm run db:migrate
+npm run db:seed
+npm run db:studio
+npm run pipeline:run
+npm run pipeline:scheduler</code></pre>
+      </div>
+      <div class="qr-card">
+        <h4>Docker / VPS</h4>
+        <pre><code>docker compose up -d --build
+docker compose ps
+docker compose logs -f app
+docker compose down
+docker compose exec app \
+  npx prisma migrate deploy</code></pre>
+      </div>
+      <div class="qr-card">
+        <h4>API Endpoints</h4>
+        <pre><code>GET  /api/health
+GET  /api/videos
+GET  /api/categories
+POST /api/videos/:id/like
+POST /api/videos/:id/save
+POST /api/videos/:id/view
+GET  /api/analytics/:id
+POST /api/pipeline</code></pre>
+      </div>
+      <div class="qr-card">
+        <h4>Redis CLI</h4>
+        <pre><code>redis-cli -a TCXi9X9VqjDpq6Eq ping
+redis-cli -a TCXi9X9VqjDpq6Eq \
+  KEYS "videos:*"
+redis-cli -a TCXi9X9VqjDpq6Eq \
+  FLUSHDB</code></pre>
+      </div>
+      <div class="qr-card">
+        <h4>Cache TTLs</h4>
+        <pre><code>Videos feed    5 min
+Categories     1 hour
+Analytics      5 min
+Like count     1 hour
+Rate limit     60s window
+               100 req/min/IP</code></pre>
+      </div>
+      <div class="qr-card">
+        <h4>PM2</h4>
+        <pre><code>pm2 list
+pm2 logs nfws-pipeline
+pm2 restart nfws-pipeline
+pm2 stop nfws-pipeline
+pm2 delete nfws-pipeline</code></pre>
+      </div>
+    </div>
+
+    <h3>Environment variables reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Your Value</th><th>Required</th></tr></thead>
+        <tbody>
+          <tr><td><code>DATABASE_URL</code></td><td>postgresql://nfws_user:zkdtoy1lErD1A7AwDuxX@localhost:5432/nfws_db</td><td>✓ Always</td></tr>
+          <tr><td><code>REDIS_URL</code></td><td>redis://:TCXi9X9VqjDpq6Eq@localhost:6379</td><td>✓ Always</td></tr>
+          <tr><td><code>NEXTAUTH_SECRET</code></td><td>dczUi0gC6gYpOCjdf9yTXtDNnStGnEcf5HqxDpjWVzk=</td><td>✓ Always</td></tr>
+          <tr><td><code>GCP_BUCKET</code></td><td>your-bucket-name</td><td>Pipeline only</td></tr>
+          <tr><td><code>GCP_PROJECT_ID</code></td><td>your-gcp-project</td><td>Pipeline only</td></tr>
+          <tr><td><code>GCP_KEY_FILE</code></td><td>secrets/gcp-service-account.json</td><td>Pipeline only</td></tr>
+          <tr><td><code>REDDIT_CLIENT_ID</code></td><td>from reddit.com/prefs/apps</td><td>Pipeline only</td></tr>
+          <tr><td><code>REDDIT_SECRET</code></td><td>from reddit.com/prefs/apps</td><td>Pipeline only</td></tr>
+          <tr><td><code>PIPELINE_SUBREDDITS</code></td><td>gifs,realgirls</td><td>Pipeline only</td></tr>
+          <tr><td><code>PIPELINE_CRON</code></td><td>0 */6 * * *</td><td>Scheduler only</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ── Copy code block ───────────────────────────────────────
+  function copyCode(btn) {
+    const pre = btn.closest('.code-wrap').querySelector('pre');
+    const text = pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>Copied!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy';
+      }, 2000);
+    });
+  }
+
+  // ── Copy credential value ─────────────────────────────────
+  function copyCred(btn, id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      btn.textContent = 'Copied!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.textContent = 'Copy';
+      }, 2000);
+    });
+  }
+
+  // ── Checklist toggle ──────────────────────────────────────
+  function toggleCheck(el) {
+    el.classList.toggle('checked');
+    el.closest('li').classList.toggle('done');
+  }
+
+  // ── Active nav highlight ──────────────────────────────────
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('#sidebar a');
+
+  new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const id = e.target.id;
+        navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' }).observe
+    ? (() => {
+        const obs = new IntersectionObserver((entries) => {
+          entries.forEach(e => {
+            if (e.isIntersecting) {
+              const id = e.target.id;
+              navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+            }
+          });
+        }, { rootMargin: '-30% 0px -60% 0px' });
+        sections.forEach(s => obs.observe(s));
+      })()
+    : null;
+</script>
+</body>
+</html>
