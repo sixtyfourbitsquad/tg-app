@@ -22,18 +22,36 @@ async function registerUser(telegramId: number, username?: string) {
 
 bot.start(async (ctx) => {
   const { id, username, first_name } = ctx.from;
+  const payload = ctx.startPayload; // e.g. "connect_ABC123"
+
+  if (payload?.startsWith("connect_")) {
+    const code = payload.replace("connect_", "").toUpperCase();
+    try {
+      const res = await fetch(`${APP_URL}/api/auth/connect?code=${code}`);
+      if (!res.ok) {
+        return ctx.reply("❌ Link expired or invalid. Go back to the app and try again.");
+      }
+      const { user_id } = await res.json();
+      await prisma.user.update({
+        where: { id: user_id },
+        data: { telegram_id: BigInt(id), username: username ?? null },
+      });
+      return ctx.reply(
+        `✅ *Account connected!*\n\nYour Telegram is now linked to your VaultX account. Your likes and saves are synced.`,
+        { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.url("🎬 Open VaultX", APP_URL)]]) }
+      );
+    } catch {
+      return ctx.reply("❌ Something went wrong. Please try again.");
+    }
+  }
 
   await registerUser(id, username);
-
   const name = first_name ?? username ?? "there";
-
   await ctx.reply(
     `👋 Hey ${name}! Welcome to *VaultX* — your private video feed.\n\nTap below to open the app and start watching.`,
     {
       parse_mode: "Markdown",
-      ...Markup.inlineKeyboard([
-        [Markup.button.url("🎬 Open VaultX", APP_URL)],
-      ]),
+      ...Markup.inlineKeyboard([[Markup.button.url("🎬 Open VaultX", APP_URL)]]),
     }
   );
 });

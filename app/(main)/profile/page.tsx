@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Crown, Heart, Bookmark, User, Copy, Check } from "lucide-react";
+import { Crown, Heart, Bookmark, User } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 
 interface ProfileData {
@@ -16,8 +16,7 @@ export default function ProfilePage() {
   const { user: tgUser, isPremium: tgPremium } = useUser();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [connectCode, setConnectCode] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -26,18 +25,17 @@ export default function ProfilePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const generateCode = useCallback(async () => {
-    const res = await fetch("/api/auth/connect", { method: "POST" });
-    const { code } = await res.json();
-    setConnectCode(code);
+  const handleConnect = useCallback(async () => {
+    setConnecting(true);
+    try {
+      const res = await fetch("/api/auth/connect", { method: "POST" });
+      const { code } = await res.json();
+      const botUsername = "XXreels_bot";
+      window.open(`https://t.me/${botUsername}?start=connect_${code}`, "_blank");
+    } finally {
+      setConnecting(false);
+    }
   }, []);
-
-  const copyCode = useCallback(() => {
-    if (!connectCode) return;
-    navigator.clipboard.writeText(`/connect ${connectCode}`).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [connectCode]);
 
   return (
     <div className="h-dvh bg-bg-primary text-text-primary flex flex-col" style={{ paddingTop: 56 }}>
@@ -115,34 +113,21 @@ export default function ProfilePage() {
 
           {/* Telegram connect */}
           {!profile?.telegram_id && (
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Connect Telegram</p>
-                  <p className="text-xs text-white/30 mt-0.5">Sync your data across devices</p>
-                </div>
-                {!connectCode && (
-                  <button
-                    onClick={generateCode}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#229ED9] text-white text-xs font-semibold"
-                  >
-                    Get Code
-                  </button>
-                )}
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Connect Telegram</p>
+                <p className="text-xs text-white/30 mt-0.5">Sync your data across devices</p>
               </div>
-
-              {connectCode && (
-                <div className="space-y-2">
-                  <p className="text-xs text-white/50">Send this command to the bot:</p>
-                  <div className="flex items-center gap-2 bg-black/40 rounded-xl px-3 py-2.5 border border-white/10">
-                    <code className="flex-1 text-sm text-accent font-mono">/connect {connectCode}</code>
-                    <button onClick={copyCode} className="text-white/50 hover:text-white transition-colors">
-                      {copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-white/30">Code expires in 10 minutes</p>
-                </div>
-              )}
+              <button
+                onClick={handleConnect}
+                disabled={connecting}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#229ED9] text-white text-xs font-semibold disabled:opacity-50"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L8.32 13.617l-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.828.942z" />
+                </svg>
+                {connecting ? "Opening..." : "Connect"}
+              </button>
             </div>
           )}
         </div>
