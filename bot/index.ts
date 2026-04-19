@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { Telegraf, Markup } from "telegraf";
 import { PrismaClient } from "@prisma/client";
 

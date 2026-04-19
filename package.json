@@ -13,7 +13,7 @@
     "db:studio": "prisma studio",
     "pipeline:run": "tsx pipeline/scheduler.ts --run",
     "pipeline:scheduler": "tsx pipeline/scheduler.ts",
-    "bot": "tsx bot/index.ts"
+    "bot": "tsx --env-file .env bot/index.ts"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.14.0",
