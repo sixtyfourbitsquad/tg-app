@@ -29,20 +29,37 @@ bot.start(async (ctx) => {
     const code = payload.replace("connect_", "").toUpperCase();
     try {
       const res = await fetch(`${APP_URL_INTERNAL}/api/auth/connect?code=${code}`);
+      const body = await res.json();
+      console.log("Connect API response:", res.status, body);
+
       if (!res.ok) {
-        return ctx.reply("❌ Link expired or invalid. Go back to the app and try again.");
+        return ctx.reply(`❌ Link expired or invalid (${res.status}). Go back to the app and try again.`);
       }
-      const { user_id } = await res.json();
-      await prisma.user.update({
-        where: { id: user_id },
-        data: { telegram_id: BigInt(id), username: username ?? null },
-      });
+
+      const { user_id } = body;
+
+      // Check if this telegram_id is already linked to another account
+      const existing = await prisma.user.findUnique({ where: { telegram_id: BigInt(id) } });
+      if (existing && existing.id !== user_id) {
+        // Already linked — merge by updating the target user
+        await prisma.user.update({
+          where: { id: user_id },
+          data: { telegram_id: BigInt(id), username: username ?? null },
+        });
+      } else if (!existing) {
+        await prisma.user.update({
+          where: { id: user_id },
+          data: { telegram_id: BigInt(id), username: username ?? null },
+        });
+      }
+
       return ctx.reply(
         `✅ *Account connected!*\n\nYour Telegram is now linked to your VaultX account. Your likes and saves are synced.`,
         { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.url("🎬 Open VaultX", APP_URL)]]) }
       );
-    } catch {
-      return ctx.reply("❌ Something went wrong. Please try again.");
+    } catch (err) {
+      console.error("Connect error:", err);
+      return ctx.reply(`❌ Something went wrong: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
