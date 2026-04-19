@@ -45,7 +45,7 @@ function Feed() {
       ) : (
         <div
           className="w-full overflow-y-scroll snap-y snap-mandatory no-scrollbar"
-          style={{ height: "calc(100dvh - 56px)", marginTop: 56, scrollSnapType: "y mandatory" }}
+          style={{ height: "100dvh", scrollSnapType: "y mandatory" }}
         >
           <AnimatePresence initial={false}>
             {videos.map((video, index) => (

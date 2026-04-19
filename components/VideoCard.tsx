@@ -164,6 +164,8 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           poster={video.thumbnail}
         />
 
+        {/* Top gradient for nav readability */}
+        <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
         {/* Bottom gradient overlay */}
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
 
