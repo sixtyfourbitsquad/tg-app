@@ -17,7 +17,9 @@ export function getFingerprint(req: NextRequest): string {
 }
 
 export function getTelegramId(req: NextRequest): bigint | null {
-  const raw = req.headers.get("x-telegram-id");
+  const fromHeader = req.headers.get("x-telegram-id");
+  const fromCookie = req.cookies.get("tg_id")?.value;
+  const raw = fromHeader ?? fromCookie ?? null;
   if (!raw) return null;
   try {
     return BigInt(raw);

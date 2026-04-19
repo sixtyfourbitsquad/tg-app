@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
+import { UserProvider } from "@/context/UserContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -34,9 +35,11 @@ export default function RootLayout({
         <script src="https://telegram.org/js/telegram-web-app.js" async />
       </head>
       <body className={`${inter.variable} font-sans bg-bg-primary text-text-primary`}>
-        <ToastProvider>
-          <div className="app-container">{children}</div>
-        </ToastProvider>
+        <UserProvider>
+          <ToastProvider>
+            <div className="app-container">{children}</div>
+          </ToastProvider>
+        </UserProvider>
       </body>
     </html>
   );
