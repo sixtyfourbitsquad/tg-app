@@ -411,10 +411,11 @@ ffmpeg -version       <span class="cmt"># ffmpeg version 6.x</span></code></pre>
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
-          <h4>Go to the project folder</h4>
+          <h4>Clone the repository</h4>
           <div class="code-wrap has-header">
             <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
-            <pre><code><span class="cmd">cd</span> <span class="str">"/home/meow/Work/TELEGRAM BOTS/NFWS TG REDDIT API"</span></code></pre>
+            <pre><code><span class="cmd">git clone</span> https://github.com/sixtyfourbitsquad/tg-app.git
+<span class="cmd">cd</span> tg-app</code></pre>
           </div>
         </div>
       </div>
@@ -840,7 +841,7 @@ redis-cli -a <span class="hi">TCXi9X9VqjDpq6Eq</span> GET <span class="str">"vid
     <div class="code-wrap has-header">
       <div class="code-header"><span class="code-lang">bash — on your VPS</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
       <pre><code><span class="cmd">export</span> <span class="env">DOMAIN</span>=<span class="str">"yourdomain.com"</span>
-<span class="cmd">export</span> <span class="env">REPO_URL</span>=<span class="str">"https://github.com/you/your-repo.git"</span>
+<span class="cmd">export</span> <span class="env">REPO_URL</span>=<span class="str">"https://github.com/sixtyfourbitsquad/tg-app.git"</span>
 <span class="cmd">sudo bash</span> scripts/deploy.sh</code></pre>
     </div>
 
@@ -858,7 +859,7 @@ redis-cli -a <span class="hi">TCXi9X9VqjDpq6Eq</span> GET <span class="str">"vid
     <h4>2. Clone repo and create .env</h4>
     <div class="code-wrap has-header">
       <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
-      <pre><code><span class="cmd">git clone</span> https://github.com/you/your-repo.git /var/www/nfws
+      <pre><code><span class="cmd">git clone</span> https://github.com/sixtyfourbitsquad/tg-app.git /var/www/nfws
 <span class="cmd">cd</span> /var/www/nfws
 <span class="cmd">cp</span> .env.example .env
 <span class="cmd">nano</span> .env  <span class="cmt"># fill in production values (use the credentials above)</span>

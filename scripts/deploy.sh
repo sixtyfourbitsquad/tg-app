@@ -4,7 +4,7 @@
 set -euo pipefail
 
 DOMAIN="${DOMAIN:-example.com}"
-REPO_URL="${REPO_URL:-https://github.com/your-org/nfws-tg-reddit-api.git}"
+REPO_URL="${REPO_URL:-https://github.com/sixtyfourbitsquad/tg-app.git}"
 APP_DIR="/var/www/nfws"
 COMPOSE_VERSION="2.24.0"
 
