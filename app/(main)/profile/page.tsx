@@ -30,9 +30,8 @@ export default function ProfilePage() {
     try {
       const res = await fetch("/api/auth/connect", { method: "POST" });
       const { code } = await res.json();
-      const botUsername = "XXreels_bot";
-      window.open(`https://t.me/${botUsername}?start=connect_${code}`, "_blank");
-    } finally {
+      window.location.href = `https://t.me/XXreels_bot?start=connect_${code}`;
+    } catch {
       setConnecting(false);
     }
   }, []);

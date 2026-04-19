@@ -3,7 +3,8 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://35.200.162.160:3000";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const APP_URL_INTERNAL = "http://localhost:3000";
 
 if (!BOT_TOKEN) {
   console.error("TELEGRAM_BOT_TOKEN is not set");
@@ -27,7 +28,7 @@ bot.start(async (ctx) => {
   if (payload?.startsWith("connect_")) {
     const code = payload.replace("connect_", "").toUpperCase();
     try {
-      const res = await fetch(`${APP_URL}/api/auth/connect?code=${code}`);
+      const res = await fetch(`${APP_URL_INTERNAL}/api/auth/connect?code=${code}`);
       if (!res.ok) {
         return ctx.reply("❌ Link expired or invalid. Go back to the app and try again.");
       }
@@ -66,7 +67,7 @@ bot.command("connect", async (ctx) => {
 
   try {
     // Resolve the code to a user_id
-    const res = await fetch(`${APP_URL}/api/auth/connect?code=${code}`);
+    const res = await fetch(`${APP_URL_INTERNAL}/api/auth/connect?code=${code}`);
     if (!res.ok) {
       return ctx.reply("❌ Invalid or expired code. Get a new one from the app.");
     }
