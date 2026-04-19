@@ -1,21 +1,21 @@
 import cron from "node-cron";
 import { PrismaClient } from "@prisma/client";
 import {
-  getRedditToken,
-  fetchSubredditVideos,
-  processPost,
+  getRedgifsToken,
+  fetchRedgifsVideos,
+  processGif,
 } from "./reddit";
 import { logger } from "../lib/logger";
 
 const prisma = new PrismaClient();
 const CRON_SCHEDULE = process.env.PIPELINE_CRON ?? "0 */6 * * *";
 
-async function resolveOrCreateCategory(subreddit: string): Promise<string> {
-  const slug = subreddit.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+async function resolveOrCreateCategory(tag: string): Promise<string> {
+  const slug = tag.toLowerCase().replace(/[^a-z0-9-]/g, "-");
   const cat = await prisma.category.upsert({
     where: { slug },
     update: {},
-    create: { name: subreddit, slug },
+    create: { name: tag, slug },
   });
   return cat.id;
 }
@@ -25,7 +25,7 @@ export async function runPipeline(): Promise<{
   videos_fetched: number;
   errors: string[];
 }> {
-  const subreddits = (process.env.PIPELINE_SUBREDDITS ?? "")
+  const tags = (process.env.REDGIFS_SEARCH_TAGS ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
@@ -34,19 +34,19 @@ export async function runPipeline(): Promise<{
   const errors: string[] = [];
   let videos_fetched = 0;
 
-  if (subreddits.length === 0) {
-    logger.error("PIPELINE_SUBREDDITS not configured");
-    return { status: "failed", videos_fetched: 0, errors: ["No subreddits configured"] };
+  if (tags.length === 0) {
+    logger.error("REDGIFS_SEARCH_TAGS not configured");
+    return { status: "failed", videos_fetched: 0, errors: ["No search tags configured"] };
   }
 
-  logger.info("Pipeline started", { subreddits, limit });
+  logger.info("Pipeline started", { tags, limit });
 
   let token: string;
   try {
-    token = await getRedditToken();
-    logger.info("Reddit token obtained");
+    token = await getRedgifsToken();
+    logger.info("Redgifs token obtained");
   } catch (err) {
-    const msg = `Reddit auth failed: ${err instanceof Error ? err.message : err}`;
+    const msg = `Redgifs auth failed: ${err instanceof Error ? err.message : err}`;
     logger.error(msg);
     await prisma.pipelineLog.create({
       data: { status: "failed", videos_fetched: 0, errors: [msg] },
@@ -54,34 +54,33 @@ export async function runPipeline(): Promise<{
     return { status: "failed", videos_fetched: 0, errors: [msg] };
   }
 
-  for (const sub of subreddits) {
-    logger.info(`Fetching r/${sub}`);
+  for (const tag of tags) {
+    logger.info(`Fetching tag: ${tag}`);
 
-    let posts;
+    let gifs;
     try {
-      posts = await fetchSubredditVideos(token, sub, limit);
-      logger.info(`Found ${posts.length} eligible videos in r/${sub}`);
+      gifs = await fetchRedgifsVideos(token, tag, limit);
+      logger.info(`Found ${gifs.length} videos for tag "${tag}"`);
     } catch (err) {
-      const msg = `Failed to fetch r/${sub}: ${err instanceof Error ? err.message : err}`;
+      const msg = `Failed to fetch tag "${tag}": ${err instanceof Error ? err.message : err}`;
       logger.error(msg);
       errors.push(msg);
       continue;
     }
 
-    for (const post of posts) {
-      // Skip already processed
+    for (const gif of gifs) {
       const exists = await prisma.video.findUnique({
-        where: { reddit_id: post.id },
+        where: { reddit_id: gif.id },
         select: { id: true },
       });
       if (exists) {
-        logger.debug(`Skipping duplicate ${post.id}`);
+        logger.debug(`Skipping duplicate ${gif.id}`);
         continue;
       }
 
       try {
-        const processed = await processPost(post);
-        const category_id = await resolveOrCreateCategory(processed.subreddit);
+        const processed = await processGif(gif, tag);
+        const category_id = await resolveOrCreateCategory(processed.tag);
 
         await prisma.video.create({
           data: {
@@ -90,14 +89,14 @@ export async function runPipeline(): Promise<{
             title: processed.title,
             category_id,
             duration: processed.duration,
-            reddit_id: processed.reddit_id,
+            reddit_id: processed.redgifs_id,
           },
         });
 
         videos_fetched++;
-        logger.info(`Saved video ${post.id} from r/${sub}`);
+        logger.info(`Saved video ${gif.id} for tag "${tag}"`);
       } catch (err) {
-        const msg = `Failed to process ${post.id}: ${err instanceof Error ? err.message : err}`;
+        const msg = `Failed to process ${gif.id}: ${err instanceof Error ? err.message : err}`;
         logger.error(msg);
         errors.push(msg);
       }
@@ -125,7 +124,6 @@ if (require.main === module) {
   const args = process.argv.slice(2);
 
   if (args.includes("--run")) {
-    // Manual one-shot run: tsx pipeline/scheduler.ts --run
     logger.info("Manual pipeline trigger");
     runPipeline()
       .then((result) => {
@@ -137,7 +135,6 @@ if (require.main === module) {
         process.exit(1);
       });
   } else {
-    // Daemon mode: schedule on cron
     logger.info(`Pipeline scheduler starting — cron: ${CRON_SCHEDULE}`);
 
     if (!cron.validate(CRON_SCHEDULE)) {
