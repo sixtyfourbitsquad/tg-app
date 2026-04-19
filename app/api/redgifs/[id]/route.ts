@@ -7,9 +7,24 @@ const REDGIFS_API = "https://api.redgifs.com/v2";
 async function getToken(): Promise<string> {
   const cached = await cacheGet<string>("redgifs:token");
   if (cached) return cached;
-  const { data } = await axios.get<{ token: string }>(`${REDGIFS_API}/auth/temporary`);
-  await cacheSet("redgifs:token", data.token, 3600);
-  return data.token;
+
+  const username = process.env.REDGIFS_USERNAME;
+  const password = process.env.REDGIFS_PASSWORD;
+
+  let token: string;
+  if (username && password) {
+    const { data } = await axios.post<{ token: string }>(`${REDGIFS_API}/auth/native`, {
+      username,
+      password,
+    });
+    token = data.token;
+  } else {
+    const { data } = await axios.get<{ token: string }>(`${REDGIFS_API}/auth/temporary`);
+    token = data.token;
+  }
+
+  await cacheSet("redgifs:token", token, 3600);
+  return token;
 }
 
 export async function GET(

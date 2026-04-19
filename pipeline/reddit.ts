@@ -27,6 +27,17 @@ export interface ProcessedVideo {
 }
 
 export async function getRedgifsToken(): Promise<string> {
+  const username = process.env.REDGIFS_USERNAME;
+  const password = process.env.REDGIFS_PASSWORD;
+
+  if (username && password) {
+    const { data } = await axios.post<{ token: string }>(`${REDGIFS_API}/auth/native`, {
+      username,
+      password,
+    });
+    return data.token;
+  }
+
   const { data } = await axios.get<{ token: string }>(`${REDGIFS_API}/auth/temporary`);
   return data.token;
 }
