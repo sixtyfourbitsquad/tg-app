@@ -266,7 +266,7 @@
   <a href="#part3">3 · Database Setup</a>
   <a href="#part4">4 · Run Locally</a>
   <div class="nav-section">Integrations</div>
-  <a href="#part5">5 · Reddit API</a>
+  <a href="#part5">5 · Redgifs API</a>
   <a href="#part6">6 · Google Cloud Storage</a>
   <a href="#part7">7 · Pipeline</a>
   <div class="nav-section">API &amp; Testing</div>
@@ -447,7 +447,7 @@ ffmpeg -version       <span class="cmt"># ffmpeg version 6.x</span></code></pre>
         <div class="step-num">4</div>
         <div class="step-body">
           <h4>Paste this complete <code>.env</code> — credentials pre-filled</h4>
-          <p>Replace <code>YOUR_REDDIT_CLIENT_ID</code>, <code>YOUR_REDDIT_SECRET</code>, <code>YOUR_GCP_*</code> after setting up those services.</p>
+          <p>Replace <code>YOUR_GCP_*</code> after setting up GCS. No Reddit credentials needed.</p>
           <div class="code-wrap has-header">
             <div class="code-header"><span class="code-lang">.env</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
             <pre><code><span class="env">DATABASE_URL</span>=<span class="str">"postgresql://nfws_user:<span class="hi">zkdtoy1lErD1A7AwDuxX</span>@localhost:5432/nfws_db"</span>
@@ -455,12 +455,9 @@ ffmpeg -version       <span class="cmt"># ffmpeg version 6.x</span></code></pre>
 <span class="env">GCP_BUCKET</span>=<span class="str">"YOUR_GCP_BUCKET_NAME"</span>
 <span class="env">GCP_PROJECT_ID</span>=<span class="str">"YOUR_GCP_PROJECT_ID"</span>
 <span class="env">GCP_KEY_FILE</span>=<span class="str">"secrets/gcp-service-account.json"</span>
-<span class="env">REDDIT_CLIENT_ID</span>=<span class="str">"YOUR_REDDIT_CLIENT_ID"</span>
-<span class="env">REDDIT_SECRET</span>=<span class="str">"YOUR_REDDIT_SECRET"</span>
-<span class="env">REDDIT_USER_AGENT</span>=<span class="str">"nfws-bot/1.0 by u/yourusername"</span>
 <span class="env">NEXTAUTH_SECRET</span>=<span class="str">"<span class="hi">dczUi0gC6gYpOCjdf9yTXtDNnStGnEcf5HqxDpjWVzk=</span>"</span>
 <span class="env">NEXTAUTH_URL</span>=<span class="str">"http://localhost:3000"</span>
-<span class="env">PIPELINE_SUBREDDITS</span>=<span class="str">"gifs,realgirls"</span>
+<span class="env">REDGIFS_SEARCH_TAGS</span>=<span class="str">"nsfw,amateur"</span>
 <span class="env">PIPELINE_LIMIT</span>=<span class="str">"25"</span>
 <span class="env">PIPELINE_CRON</span>=<span class="str">"0 */6 * * *"</span>
 <span class="env">NODE_ENV</span>=<span class="str">"development"</span>
@@ -527,7 +524,7 @@ requirepass <span class="hi">TCXi9X9VqjDpq6Eq</span>
     <h3>5 · Seed 10 test videos</h3>
     <div class="callout success">
       <span class="callout-icon">✓</span>
-      <div><strong>No Reddit or GCS needed</strong>Seed loads 10 public-domain videos so you can test the whole UI immediately.</div>
+      <div><strong>No Redgifs or GCS needed</strong>Seed loads 10 public-domain videos so you can test the whole UI immediately.</div>
     </div>
     <div class="code-wrap has-header">
       <div class="code-header"><span class="code-lang">bash</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
@@ -580,37 +577,37 @@ Seed complete.</span></code></pre>
   <div class="section" id="part5">
     <div class="section-header">
       <div class="part-badge">5</div>
-      <h2>Reddit API Setup</h2>
+      <h2>Redgifs API Setup</h2>
     </div>
 
-    <div class="callout warn">
-      <span class="callout-icon">⚠</span>
-      <div><strong>Only needed for live pipeline</strong>Skip this and Part 6 if you only want to test with the 10 seeded videos.</div>
+    <div class="callout success">
+      <span class="callout-icon">✓</span>
+      <div><strong>No account or credentials needed</strong>Redgifs provides a free temporary auth token automatically. Just set your search tags.</div>
     </div>
 
     <div class="steps">
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-body">
-          <h4>Create a Reddit App</h4>
-          <p>Go to <a href="https://www.reddit.com/prefs/apps" target="_blank">reddit.com/prefs/apps</a> → <strong>Create App</strong></p>
-          <ul>
-            <li>Type: <strong>script</strong></li>
-            <li>Redirect URI: <code>http://localhost</code></li>
-          </ul>
+          <h4>Set your search tags in <code>.env</code></h4>
+          <p>Comma-separated list of tags to fetch from Redgifs trending feed.</p>
+          <div class="code-wrap has-header">
+            <div class="code-header"><span class="code-lang">.env</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
+            <pre><code><span class="env">REDGIFS_SEARCH_TAGS</span>=<span class="str">"nsfw,amateur,verified"</span>
+<span class="env">PIPELINE_LIMIT</span>=<span class="str">"25"</span></code></pre>
+          </div>
         </div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-body">
-          <h4>Copy credentials and paste into <code>.env</code></h4>
-          <div class="code-wrap has-header">
-            <div class="code-header"><span class="code-lang">.env</span><button class="copy-btn" onclick="copyCode(this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button></div>
-            <pre><code><span class="env">REDDIT_CLIENT_ID</span>=<span class="str">"paste_your_client_id_here"</span>
-<span class="env">REDDIT_SECRET</span>=<span class="str">"paste_your_secret_here"</span>
-<span class="env">REDDIT_USER_AGENT</span>=<span class="str">"nfws-bot/1.0 by u/yourusername"</span>
-<span class="env">PIPELINE_SUBREDDITS</span>=<span class="str">"gifs,nsfw,realgirls"</span></code></pre>
-          </div>
+          <h4>How it works</h4>
+          <ul>
+            <li>Pipeline fetches a temporary token from <code>GET /v2/auth/temporary</code> — no login required</li>
+            <li>Searches <code>GET /v2/gifs/search?search_text=TAG&amp;order=trending</code> for each tag</li>
+            <li>Downloads the <code>urls.hd</code> MP4 directly — audio and video already combined, no ffmpeg needed</li>
+            <li>Uploads to GCS and saves to PostgreSQL with dedup check</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -919,7 +916,7 @@ pm2 logs nfws-pipeline         <span class="cmt"># pipeline logs</span>
           <tr><td><code>PrismaClientInitializationError</code></td><td>Check <code>DATABASE_URL</code>; run <code>sudo systemctl status postgresql</code></td></tr>
           <tr><td>Redis connection refused</td><td><code>redis-cli -a TCXi9X9VqjDpq6Eq ping</code> — if no PONG, restart Redis</td></tr>
           <tr><td>Redis auth error</td><td>Confirm <code>requirepass TCXi9X9VqjDpq6Eq</code> is set in redis.conf and Redis was restarted</td></tr>
-          <tr><td>Pipeline: 0 videos</td><td>Check Reddit credentials; posts need score ≥ 100 and domain <code>v.redd.it</code></td></tr>
+          <tr><td>Pipeline: 0 videos</td><td>Check <code>REDGIFS_SEARCH_TAGS</code> is set; verify Redgifs token endpoint is reachable</td></tr>
           <tr><td>GCS upload fails</td><td>Verify <code>secrets/gcp-service-account.json</code> exists; check bucket allUsers permission</td></tr>
           <tr><td><code>ffmpeg not found</code></td><td><code>sudo apt install ffmpeg</code></td></tr>
           <tr><td>Nginx 502</td><td><code>docker compose logs app</code> — app container must be healthy</td></tr>
@@ -1006,9 +1003,7 @@ pm2 delete nfws-pipeline</code></pre>
           <tr><td><code>GCP_BUCKET</code></td><td>your-bucket-name</td><td>Pipeline only</td></tr>
           <tr><td><code>GCP_PROJECT_ID</code></td><td>your-gcp-project</td><td>Pipeline only</td></tr>
           <tr><td><code>GCP_KEY_FILE</code></td><td>secrets/gcp-service-account.json</td><td>Pipeline only</td></tr>
-          <tr><td><code>REDDIT_CLIENT_ID</code></td><td>from reddit.com/prefs/apps</td><td>Pipeline only</td></tr>
-          <tr><td><code>REDDIT_SECRET</code></td><td>from reddit.com/prefs/apps</td><td>Pipeline only</td></tr>
-          <tr><td><code>PIPELINE_SUBREDDITS</code></td><td>gifs,realgirls</td><td>Pipeline only</td></tr>
+          <tr><td><code>REDGIFS_SEARCH_TAGS</code></td><td>nsfw,amateur</td><td>Pipeline only</td></tr>
           <tr><td><code>PIPELINE_CRON</code></td><td>0 */6 * * *</td><td>Scheduler only</td></tr>
         </tbody>
       </table>
