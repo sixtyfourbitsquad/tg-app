@@ -32,7 +32,7 @@ bot.start(async (ctx) => {
     {
       parse_mode: "Markdown",
       ...Markup.inlineKeyboard([
-        [Markup.button.webApp("🎬 Open VaultX", APP_URL)],
+        [Markup.button.url("🎬 Open VaultX", APP_URL)],
       ]),
     }
   );
@@ -56,7 +56,7 @@ bot.command("profile", async (ctx) => {
     {
       parse_mode: "Markdown",
       ...Markup.inlineKeyboard([
-        [Markup.button.webApp("🎬 Open VaultX", APP_URL)],
+        [Markup.button.url("🎬 Open VaultX", APP_URL)],
       ]),
     }
   );
