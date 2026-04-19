@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useVideoFeed } from "@/hooks/useVideoFeed";
 import { useCategories } from "@/hooks/useCategories";
@@ -8,6 +9,7 @@ import { VideoCard, type VideoCardHandle } from "@/components/VideoCard";
 import { VideoFeedSkeleton } from "@/components/ui/Skeleton";
 
 export default function FeedPage() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState<string | undefined>();
   const [muted, setMuted] = useState(true);
   const { categories } = useCategories();
@@ -34,12 +36,24 @@ export default function FeedPage() {
   return (
     <div className="relative w-full h-dvh overflow-hidden">
       {/* ── Floating category tabs ─────────────────────────────── */}
-      <div className="absolute top-0 inset-x-0 z-30 pt-safe">
-        <CategoryTabs
-          categories={[{ id: "all", name: "For You", slug: "" }, ...categories]}
-          active={activeCategory ?? ""}
-          onChange={(slug) => handleCategoryChange(slug || undefined)}
-        />
+      <div className="absolute top-0 inset-x-0 z-30 pt-safe flex items-start">
+        <div className="flex-1 min-w-0">
+          <CategoryTabs
+            categories={[{ id: "all", name: "For You", slug: "" }, ...categories]}
+            active={activeCategory ?? ""}
+            onChange={(slug) => handleCategoryChange(slug || undefined)}
+          />
+        </div>
+        <button
+          onClick={() => router.push("/profile")}
+          className="mt-2 mr-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white shrink-0"
+          aria-label="Profile"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </button>
       </div>
 
       {/* ── Scroll snap feed ───────────────────────────────────── */}
