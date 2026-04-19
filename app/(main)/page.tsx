@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useVideoFeed } from "@/hooks/useVideoFeed";
@@ -8,6 +8,14 @@ import { VideoCard, type VideoCardHandle } from "@/components/VideoCard";
 import { VideoFeedSkeleton } from "@/components/ui/Skeleton";
 
 export default function FeedPage() {
+  return (
+    <Suspense fallback={<VideoFeedSkeleton count={2} />}>
+      <Feed />
+    </Suspense>
+  );
+}
+
+function Feed() {
   const searchParams = useSearchParams();
   const category = searchParams.get("cat") ?? undefined;
 
