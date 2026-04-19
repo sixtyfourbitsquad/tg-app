@@ -15,7 +15,7 @@ export function BottomNav() {
   const router = useRouter();
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 flex items-center justify-around h-14 border-t border-[#222222] bg-[#0a0a0a]/90 backdrop-blur-md">
+    <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-around h-14 border-b border-[#222222] bg-[#0a0a0a]/90 backdrop-blur-md">
       {TABS.map(({ icon: Icon, href, label }) => {
         const active = pathname === href;
         return (

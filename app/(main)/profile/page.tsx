@@ -25,7 +25,7 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <div className="h-dvh bg-bg-primary text-text-primary flex flex-col" style={{ paddingBottom: 56 }}>
+    <div className="h-dvh bg-bg-primary text-text-primary flex flex-col" style={{ paddingTop: 56 }}>
       <div className="px-4 pt-6 pb-3">
         <h1 className="text-xl font-bold">Profile</h1>
       </div>
