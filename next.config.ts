@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  allowedDevOrigins: ["35.200.162.160"],
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "storage.googleapis.com" },
