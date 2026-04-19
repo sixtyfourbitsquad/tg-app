@@ -1,0 +1,38 @@
+# Example reverse proxy for VaultX on Ubuntu (nginx + Let's Encrypt).
+# 1. Point your domain A record to this server.
+# 2. `sudo certbot certonly --nginx -d yourdomain.com`
+# 3. Copy this file to `/etc/nginx/sites-available/vaultx` and adjust paths + upstream.
+# 4. `sudo ln -s /etc/nginx/sites-available/vaultx /etc/nginx/sites-enabled/`
+# 5. `sudo nginx -t && sudo systemctl reload nginx`
+
+upstream vaultx_next {
+  server 127.0.0.1:3000;
+  keepalive 32;
+}
+
+server {
+  listen 80;
+  server_name yourdomain.com;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name yourdomain.com;
+
+  ssl_certificate     /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+  client_max_body_size 20m;
+
+  location / {
+    proxy_pass         http://vaultx_next;
+    proxy_http_version 1.1;
+    proxy_set_header   Host $host;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+    proxy_set_header   Upgrade $http_upgrade;
+    proxy_set_header   Connection "upgrade";
+  }
+}

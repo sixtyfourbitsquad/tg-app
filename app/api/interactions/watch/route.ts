@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { getFingerprint } from "@/lib/fingerprint";
 import { logger } from "@/lib/logger";
+import { resolveUser } from "@/lib/user";
 
 const BodySchema = z.object({
   video_id: z.string().min(1),
@@ -11,7 +11,6 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const fp = getFingerprint(req);
 
   let body: unknown;
   try {
@@ -32,11 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Video not found" }, { status: 404 });
   }
 
-  const user = await db.user.upsert({
-    where: { ip_fingerprint: fp },
-    update: {},
-    create: { ip_fingerprint: fp },
-  });
+  const user = await resolveUser(req);
 
   await Promise.all([
     db.watchEvent.create({

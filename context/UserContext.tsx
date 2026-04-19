@@ -1,7 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import axios from "axios";
 import { getTelegramWebAppUser, getTelegramInitData, type TelegramUser } from "@/lib/telegram";
+import { setClientTelegramId } from "@/lib/axios";
 
 interface UserContextValue {
   user: TelegramUser | null;
@@ -23,13 +25,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setUser(tgUser);
 
     const initData = getTelegramInitData();
-    fetch("/api/auth/telegram", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ initData, user: tgUser }),
-    })
-      .then((r) => r.json())
-      .then((d) => { if (d.is_premium) setIsPremium(true); })
+    axios
+      .post<{ telegram_id?: string; is_premium?: boolean }>("/api/auth/telegram", {
+        initData,
+        user: tgUser,
+      })
+      .then((r) => {
+        const d = r.data;
+        if (d.telegram_id) setClientTelegramId(String(d.telegram_id));
+        if (d.is_premium) setIsPremium(true);
+      })
       .catch(() => {})
       .finally(() => setIsLoading(false));
   }, []);

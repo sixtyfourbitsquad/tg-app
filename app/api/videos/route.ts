@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { cacheGet, cacheSet } from "@/lib/redis";
-import { getFingerprint } from "@/lib/fingerprint";
 import { rateLimit } from "@/lib/ratelimit";
+import { resolveUser } from "@/lib/user";
 import { logger } from "@/lib/logger";
 import type { FeedResponse, VideoDTO } from "@/types";
 
@@ -36,7 +36,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const fp = getFingerprint(req);
     const where = category ? { category: { slug: category } } : {};
 
     // Cursor: use created_at for keyset pagination
@@ -70,8 +69,8 @@ export async function GET(req: NextRequest) {
       nextCursor = hasMore ? pageVideos[pageVideos.length - 1].created_at.toISOString() : null;
     }
 
-    // Interaction state for this user
-    const user = await db.user.findUnique({ where: { ip_fingerprint: fp } });
+    // Interaction state for this user (Telegram cookie/header or fingerprint)
+    const user = await resolveUser(req);
     const videoIds = pageVideos.map((v) => v.id);
     let likedSet = new Set<string>();
     let savedSet = new Set<string>();

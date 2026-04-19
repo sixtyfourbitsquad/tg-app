@@ -9,13 +9,15 @@ import {
   useState,
 } from "react";
 import { motion } from "framer-motion";
+import axios from "axios";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { useInteraction } from "@/hooks/useInteraction";
 import { useWatchEvent } from "@/hooks/useWatchEvent";
 import { AnimatedCount } from "@/components/ui/AnimatedCount";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Tag } from "@/components/ui/Tag";
-import type { VideoDTO } from "@/types";
+import { appShareUrl, telegramStartVideoUrl } from "@/lib/site";
+import type { VideoDTO, CommentDTO } from "@/types";
 
 export interface VideoCardHandle {
   pause: () => void;
@@ -68,6 +70,12 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [shareOpen, setShareOpen] = useState(false);
+    const [commentsOpen, setCommentsOpen] = useState(false);
+    const [comments, setComments] = useState<CommentDTO[]>([]);
+    const [commentTotal, setCommentTotal] = useState(0);
+    const [commentsLoading, setCommentsLoading] = useState(false);
+    const [commentText, setCommentText] = useState("");
+    const [commentPosting, setCommentPosting] = useState(false);
 
     // 90% visibility threshold for autoplay
     const isVisible = useIntersectionObserver(containerRef, {
@@ -128,20 +136,61 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       };
     }, []);
 
+    const sharePageUrl = useCallback(() => appShareUrl(video.id), [video.id]);
+
     const handleShare = useCallback(() => {
+      const url = sharePageUrl();
       if (navigator.share) {
-        navigator
-          .share({ title: video.title, url: window.location.href })
-          .catch(() => {});
+        navigator.share({ title: video.title, url }).catch(() => {});
       } else {
         setShareOpen(true);
       }
-    }, [video.title]);
+    }, [video.title, sharePageUrl]);
 
     const copyLink = useCallback(() => {
-      navigator.clipboard.writeText(window.location.href).catch(() => {});
+      navigator.clipboard.writeText(sharePageUrl()).catch(() => {});
       setShareOpen(false);
-    }, []);
+    }, [sharePageUrl]);
+
+    const openTelegramShare = useCallback(() => {
+      window.open(telegramStartVideoUrl(video.id), "_blank", "noopener,noreferrer");
+      setShareOpen(false);
+    }, [video.id]);
+
+    useEffect(() => {
+      if (!commentsOpen) return;
+      setCommentsLoading(true);
+      axios
+        .get<{ comments: CommentDTO[]; total: number }>(`/api/videos/${video.id}/comments`)
+        .then((r) => {
+          setComments(r.data.comments ?? []);
+          setCommentTotal(r.data.total ?? 0);
+        })
+        .catch(() => {
+          setComments([]);
+          setCommentTotal(0);
+        })
+        .finally(() => setCommentsLoading(false));
+    }, [commentsOpen, video.id]);
+
+    const submitComment = useCallback(async () => {
+      const body = commentText.trim();
+      if (!body || commentPosting) return;
+      setCommentPosting(true);
+      try {
+        const { data } = await axios.post<{ comment: CommentDTO }>(
+          `/api/videos/${video.id}/comments`,
+          { body }
+        );
+        setComments((prev) => [data.comment, ...prev]);
+        setCommentTotal((n) => n + 1);
+        setCommentText("");
+      } catch {
+        // ignore
+      } finally {
+        setCommentPosting(false);
+      }
+    }, [commentText, commentPosting, video.id]);
 
     return (
       <div
@@ -211,8 +260,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             <AnimatedCount value={likeCount} />
           </SidebarAction>
 
-          {/* Comment (placeholder — no comment model yet) */}
-          <SidebarAction onPress={() => {}} label="Comments">
+          <SidebarAction onPress={() => setCommentsOpen(true)} label="Comments">
             <svg
               className="w-7 h-7"
               fill="none"
@@ -222,7 +270,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            <span className="text-xs">0</span>
+            <span className="text-xs">{commentTotal || (commentsOpen ? comments.length : 0)}</span>
           </SidebarAction>
 
           {/* Share */}
@@ -261,6 +309,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         >
           <div className="flex flex-col gap-2">
             <button
+              type="button"
               onClick={copyLink}
               className="flex items-center gap-3 py-3 text-sm text-text-primary hover:text-accent transition-colors"
             >
@@ -269,6 +318,57 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               </span>
               Copy link
             </button>
+            <button
+              type="button"
+              onClick={openTelegramShare}
+              className="flex items-center gap-3 py-3 text-sm text-text-primary hover:text-accent transition-colors"
+            >
+              <span className="w-9 h-9 rounded-full bg-[#229ED9]/20 flex items-center justify-center text-lg">
+                ✈️
+              </span>
+              Open in Telegram
+            </button>
+          </div>
+        </BottomSheet>
+
+        <BottomSheet
+          open={commentsOpen}
+          onClose={() => setCommentsOpen(false)}
+          title="Comments"
+        >
+          <div className="flex flex-col gap-3 max-h-[55dvh]">
+            {commentsLoading ? (
+              <p className="text-sm text-white/40 py-6 text-center">Loading…</p>
+            ) : comments.length === 0 ? (
+              <p className="text-sm text-white/40 py-4 text-center">No comments yet</p>
+            ) : (
+              <ul className="space-y-3 overflow-y-auto no-scrollbar flex-1 min-h-0 pr-1">
+                {comments.map((c) => (
+                  <li key={c.id} className="text-sm border-b border-white/5 pb-2">
+                    <p className="text-xs text-white/40 mb-0.5">{c.author}</p>
+                    <p className="text-white/90 whitespace-pre-wrap break-words">{c.body}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2 pt-1 border-t border-white/10">
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                maxLength={500}
+                placeholder="Add a comment…"
+                className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm outline-none focus:border-accent/50"
+              />
+              <button
+                type="button"
+                disabled={commentPosting || !commentText.trim()}
+                onClick={() => void submitComment()}
+                className="shrink-0 rounded-xl bg-accent px-3 py-2 text-sm font-semibold text-black disabled:opacity-40"
+              >
+                Post
+              </button>
+            </div>
           </div>
         </BottomSheet>
       </div>

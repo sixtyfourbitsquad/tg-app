@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import axios from "axios";
 import { Bookmark } from "lucide-react";
 import type { VideoDTO } from "@/types";
 
@@ -9,9 +10,10 @@ export default function SavedPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/profile")
-      .then((r) => r.json())
-      .then((d) => setVideos(d.saved_videos ?? []))
+    axios
+      .get<{ saved_videos?: VideoDTO[] }>("/api/profile")
+      .then((r) => setVideos(r.data.saved_videos ?? []))
+      .catch(() => setVideos([]))
       .finally(() => setLoading(false));
   }, []);
 

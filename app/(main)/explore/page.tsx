@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 import { Compass } from "lucide-react";
 import type { CategoryDTO } from "@/types";
 
@@ -16,9 +17,10 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/categories")
-      .then((r) => r.json())
-      .then((d) => setCategories(Array.isArray(d) ? d : []))
+    axios
+      .get<CategoryDTO[]>("/api/categories")
+      .then((r) => setCategories(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setCategories([]))
       .finally(() => setLoading(false));
   }, []);
 

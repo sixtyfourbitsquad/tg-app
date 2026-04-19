@@ -1,6 +1,5 @@
 import { Telegraf, Markup } from "telegraf";
 import { PrismaClient } from "@prisma/client";
-
 const prisma = new PrismaClient();
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://35.200.162.160:3000";
@@ -23,7 +22,30 @@ async function registerUser(telegramId: number, username?: string) {
 
 bot.start(async (ctx) => {
   const { id, username, first_name } = ctx.from;
-  const payload = ctx.startPayload; // e.g. "connect_ABC123"
+  const payload = ctx.startPayload; // e.g. "connect_ABC123", "video_<id>", "premium"
+
+  if (payload === "premium") {
+    await registerUser(id, username);
+    return ctx.reply(
+      "⭐ *Premium / Telegram Stars*\n\nPayments are not enabled yet. You will be able to upgrade here soon.",
+      { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.url("🎬 Open VaultX", APP_URL)]]) }
+    );
+  }
+
+  if (payload?.startsWith("video_")) {
+    await registerUser(id, username);
+    const videoId = payload.slice("video_".length).trim();
+    if (!videoId) {
+      return ctx.reply("❌ Invalid video link.", {
+        ...Markup.inlineKeyboard([[Markup.button.url("🎬 Open VaultX", APP_URL)]]),
+      });
+    }
+    const openUrl = `${APP_URL.replace(/\/$/, "")}/?v=${encodeURIComponent(videoId)}`;
+    return ctx.reply(
+      "🎬 *Open this video in VaultX*",
+      { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.url("▶️ Watch", openUrl)]]) }
+    );
+  }
 
   if (payload?.startsWith("connect_")) {
     const code = payload.replace("connect_", "").toUpperCase();

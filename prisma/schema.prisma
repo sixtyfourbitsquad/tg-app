@@ -18,6 +18,7 @@ model User {
   likes          Like[]
   saves          Save[]
   watch_events   WatchEvent[]
+  comments       Comment[]
 
   @@index([ip_fingerprint])
   @@index([telegram_id])
@@ -48,11 +49,27 @@ model Video {
   likes        Like[]
   saves        Save[]
   watch_events WatchEvent[]
+  comments     Comment[]
 
   @@index([category_id])
   @@index([created_at])
   @@index([views])
   @@map("videos")
+}
+
+model Comment {
+  id         String   @id @default(cuid())
+  video_id   String
+  user_id    String
+  body       String   @db.VarChar(500)
+  created_at DateTime @default(now())
+
+  video Video @relation(fields: [video_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([video_id])
+  @@index([created_at])
+  @@map("comments")
 }
 
 model Like {

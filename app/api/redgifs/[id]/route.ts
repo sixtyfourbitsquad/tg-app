@@ -3,6 +3,8 @@ import { cacheGet, cacheSet, cacheDel } from "@/lib/redis";
 import { logger } from "@/lib/logger";
 
 const REDGIFS_API = "https://api.redgifs.com/v2";
+const TOKEN_TTL_SEC = 50 * 60; // stay under Redgifs expiry
+const URL_TTL_SEC = 10 * 60; // CDN URLs can expire; keep cache short
 
 async function fetchToken(): Promise<string> {
   const res = await fetch(`${REDGIFS_API}/auth/temporary`);
@@ -16,13 +18,17 @@ async function getToken(forceRefresh = false): Promise<string> {
     if (cached) return cached;
   }
   const token = await fetchToken();
-  await cacheSet("redgifs:token", token, 3600);
+  await cacheSet("redgifs:token", token, TOKEN_TTL_SEC);
   return token;
 }
 
-async function getGifUrl(id: string, token: string): Promise<string> {
-  const cached = await cacheGet<string>(`redgifs:url:${id}`);
-  if (cached) return cached;
+async function getGifUrl(id: string, token: string, forceRefresh = false): Promise<string> {
+  if (forceRefresh) {
+    await cacheDel(`redgifs:url:${id}`);
+  } else {
+    const cached = await cacheGet<string>(`redgifs:url:${id}`);
+    if (cached) return cached;
+  }
 
   const res = await fetch(`${REDGIFS_API}/gifs/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -33,7 +39,7 @@ async function getGifUrl(id: string, token: string): Promise<string> {
   const data = await res.json();
   const gif = data.gif ?? data;
   const url: string = gif?.urls?.hd ?? gif?.urls?.sd ?? "";
-  if (url) await cacheSet(`redgifs:url:${id}`, url, 1800);
+  if (url) await cacheSet(`redgifs:url:${id}`, url, URL_TTL_SEC);
   return url;
 }
 
@@ -51,11 +57,10 @@ export async function GET(
       videoUrl = await getGifUrl(id, token);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      // Token expired — refresh and retry once
       if (msg.includes("401") || msg.includes("403")) {
         await cacheDel("redgifs:token");
         token = await getToken(true);
-        videoUrl = await getGifUrl(id, token);
+        videoUrl = await getGifUrl(id, token, true);
       } else {
         throw err;
       }
@@ -69,12 +74,26 @@ export async function GET(
     const range = req.headers.get("range");
     if (range) reqHeaders["Range"] = range;
 
-    const upstream = await fetch(videoUrl, { headers: reqHeaders });
+    let upstream = await fetch(videoUrl, { headers: reqHeaders });
+
+    if (!upstream.ok && [403, 404, 410].includes(upstream.status)) {
+      logger.warn("Redgifs upstream rejected cached URL; refreshing", { id, status: upstream.status });
+      await cacheDel(`redgifs:url:${id}`);
+      videoUrl = await getGifUrl(id, token, true);
+      upstream = await fetch(videoUrl, { headers: reqHeaders });
+    }
+
+    if (!upstream.ok) {
+      return NextResponse.json(
+        { error: `Upstream ${upstream.status}` },
+        { status: upstream.status === 404 ? 404 : 502 }
+      );
+    }
 
     const resHeaders: Record<string, string> = {
       "Content-Type": upstream.headers.get("content-type") ?? "video/mp4",
       "Accept-Ranges": "bytes",
-      "Cache-Control": "public, max-age=1800",
+      "Cache-Control": `public, max-age=${URL_TTL_SEC}`,
     };
     const cl = upstream.headers.get("content-length");
     const cr = upstream.headers.get("content-range");

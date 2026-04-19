@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { redis, cacheDel } from "@/lib/redis";
-import { getFingerprint } from "@/lib/fingerprint";
 import { rateLimit } from "@/lib/ratelimit";
 import { logger } from "@/lib/logger";
+import { resolveUser } from "@/lib/user";
 import type { SaveResponse } from "@/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -13,7 +13,6 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (limited) return limited;
 
   const { id: videoId } = await params;
-  const fp = getFingerprint(req);
 
   try {
     const video = await db.video.findUnique({ where: { id: videoId } });
@@ -21,11 +20,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
     }
 
-    const user = await db.user.upsert({
-      where: { ip_fingerprint: fp },
-      update: {},
-      create: { ip_fingerprint: fp },
-    });
+    const user = await resolveUser(req);
 
     const existing = await db.save.findUnique({
       where: { user_id_video_id: { user_id: user.id, video_id: videoId } },

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { getFingerprint } from "@/lib/fingerprint";
 import { rateLimit } from "@/lib/ratelimit";
+import { resolveUser } from "@/lib/user";
 import { logger } from "@/lib/logger";
 
 type Params = { params: Promise<{ id: string }> };
@@ -17,7 +17,6 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (limited) return limited;
 
   const { id: videoId } = await params;
-  const fp = getFingerprint(req);
 
   let body: unknown;
   try {
@@ -42,11 +41,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
     }
 
-    const user = await db.user.upsert({
-      where: { ip_fingerprint: fp },
-      update: {},
-      create: { ip_fingerprint: fp },
-    });
+    const user = await resolveUser(req);
 
     await Promise.all([
       db.watchEvent.create({

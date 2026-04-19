@@ -83,6 +83,13 @@ export interface SaveResponse {
   count: number;
 }
 
+export interface CommentDTO {
+  id: string;
+  body: string;
+  created_at: string;
+  author: string;
+}
+
 export interface AnalyticsDTO {
   video_id: string;
   total_views: number;
