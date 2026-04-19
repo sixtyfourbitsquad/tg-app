@@ -38,15 +38,15 @@ bot.start(async (ctx) => {
 
       const { user_id } = body;
 
-      // Check if this telegram_id is already linked to another account
+      // If this telegram_id already owns a user record, just update username
+      // Otherwise link it to the app session user
       const existing = await prisma.user.findUnique({ where: { telegram_id: BigInt(id) } });
-      if (existing && existing.id !== user_id) {
-        // Already linked — merge by updating the target user
+      if (existing) {
         await prisma.user.update({
-          where: { id: user_id },
-          data: { telegram_id: BigInt(id), username: username ?? null },
+          where: { id: existing.id },
+          data: { username: username ?? null },
         });
-      } else if (!existing) {
+      } else {
         await prisma.user.update({
           where: { id: user_id },
           data: { telegram_id: BigInt(id), username: username ?? null },
