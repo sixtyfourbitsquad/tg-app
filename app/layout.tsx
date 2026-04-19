@@ -30,6 +30,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" data-theme="nfws" suppressHydrationWarning>
+      <head>
+        <script src="https://telegram.org/js/telegram-web-app.js" async />
+      </head>
       <body className={`${inter.variable} font-sans bg-bg-primary text-text-primary`}>
         <ToastProvider>
           <div className="app-container">{children}</div>

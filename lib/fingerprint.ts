@@ -1,10 +1,6 @@
 import { NextRequest } from "next/server";
 import { createHash } from "crypto";
 
-/**
- * Derive a stable anonymous fingerprint from request headers.
- * Not a perfect identifier — good enough for anonymous session tracking.
- */
 export function getFingerprint(req: NextRequest): string {
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
@@ -18,4 +14,14 @@ export function getFingerprint(req: NextRequest): string {
     .update(`${ip}:${ua}:${lang}`)
     .digest("hex")
     .slice(0, 32);
+}
+
+export function getTelegramId(req: NextRequest): bigint | null {
+  const raw = req.headers.get("x-telegram-id");
+  if (!raw) return null;
+  try {
+    return BigInt(raw);
+  } catch {
+    return null;
+  }
 }
