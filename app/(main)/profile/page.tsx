@@ -17,19 +17,36 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [justConnected, setJustConnected] = useState(false);
 
-  useEffect(() => {
+  const fetchProfile = useCallback(() => {
     fetch("/api/profile")
       .then((r) => r.json())
-      .then(setProfile)
-      .finally(() => setLoading(false));
+      .then((d) => {
+        setProfile(d);
+        setLoading(false);
+      });
   }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // Re-fetch when user returns from Telegram
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchProfile();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [fetchProfile]);
 
   const handleConnect = useCallback(async () => {
     setConnecting(true);
     try {
       const res = await fetch("/api/auth/connect", { method: "POST" });
       const { code } = await res.json();
+      setJustConnected(true);
       window.location.href = `https://t.me/XXreels_bot?start=connect_${code}`;
     } catch {
       setConnecting(false);
@@ -111,7 +128,21 @@ export default function ProfilePage() {
           </div>
 
           {/* Telegram connect */}
-          {!profile?.telegram_id && (
+          {profile?.telegram_id ? (
+            <div className="rounded-2xl bg-green-500/10 border border-green-500/30 p-4 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-green-400">Telegram Connected</p>
+                <p className="text-xs text-white/40 mt-0.5">
+                  @{profile.username !== "Anonymous" ? profile.username : "linked"}
+                </p>
+              </div>
+            </div>
+          ) : (
             <div className="rounded-2xl bg-white/5 border border-white/10 p-4 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">Connect Telegram</p>
