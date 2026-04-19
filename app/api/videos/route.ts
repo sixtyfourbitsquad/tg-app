@@ -28,10 +28,12 @@ export async function GET(req: NextRequest) {
   const cacheKey = `videos:${category ?? "all"}:${cursor ?? "initial"}`;
 
   try {
-    const cached = await cacheGet<FeedResponse>(cacheKey);
-    if (cached) {
-      logger.debug("Feed cache hit", { cacheKey });
-      return NextResponse.json(cached);
+    if (cursor) {
+      const cached = await cacheGet<FeedResponse>(cacheKey);
+      if (cached) {
+        logger.debug("Feed cache hit", { cacheKey });
+        return NextResponse.json(cached);
+      }
     }
 
     const fp = getFingerprint(req);
@@ -42,18 +44,31 @@ export async function GET(req: NextRequest) {
       ? { created_at: { lt: new Date(cursor) } }
       : {};
 
+    const isInitialLoad = !cursor;
+    const fetchCount = isInitialLoad ? Math.min(limit * 5, 100) : limit + 1;
+
     const rawVideos = await db.video.findMany({
       where: { ...where, ...cursorFilter },
       orderBy: { created_at: "desc" },
-      take: limit + 1, // fetch one extra to determine hasMore
+      take: fetchCount,
       include: { category: true },
     });
 
-    const hasMore = rawVideos.length > limit;
-    const pageVideos = hasMore ? rawVideos.slice(0, limit) : rawVideos;
-    const nextCursor = hasMore
-      ? pageVideos[pageVideos.length - 1].created_at.toISOString()
-      : null;
+    let pageVideos;
+    let hasMore: boolean;
+    let nextCursor: string | null;
+
+    if (isInitialLoad) {
+      // Shuffle for random feed on every refresh
+      const shuffled = rawVideos.sort(() => Math.random() - 0.5);
+      pageVideos = shuffled.slice(0, limit);
+      hasMore = rawVideos.length >= limit * 2;
+      nextCursor = hasMore ? pageVideos[pageVideos.length - 1].created_at.toISOString() : null;
+    } else {
+      hasMore = rawVideos.length > limit;
+      pageVideos = hasMore ? rawVideos.slice(0, limit) : rawVideos;
+      nextCursor = hasMore ? pageVideos[pageVideos.length - 1].created_at.toISOString() : null;
+    }
 
     // Interaction state for this user
     const user = await db.user.findUnique({ where: { ip_fingerprint: fp } });
@@ -115,7 +130,7 @@ export async function GET(req: NextRequest) {
 
     const response: FeedResponse = { videos, nextCursor, hasMore };
 
-    await cacheSet(cacheKey, response, 300); // 5 min TTL
+    if (cursor) await cacheSet(cacheKey, response, 300);
     logger.info("Feed served", { category, cursor, count: videos.length });
     return NextResponse.json(response);
   } catch (err) {
