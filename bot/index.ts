@@ -38,6 +38,37 @@ bot.start(async (ctx) => {
   );
 });
 
+bot.command("connect", async (ctx) => {
+  const { id, username } = ctx.from;
+  const code = ctx.message.text.split(" ")[1]?.trim().toUpperCase();
+
+  if (!code) {
+    return ctx.reply("Usage: /connect <CODE>\n\nGet your code from the app → Profile → Connect Telegram.");
+  }
+
+  try {
+    // Resolve the code to a user_id
+    const res = await fetch(`${APP_URL}/api/auth/connect?code=${code}`);
+    if (!res.ok) {
+      return ctx.reply("❌ Invalid or expired code. Get a new one from the app.");
+    }
+    const { user_id } = await res.json();
+
+    // Link telegram_id to that user
+    await prisma.user.update({
+      where: { id: user_id },
+      data: { telegram_id: BigInt(id), username: username ?? null },
+    });
+
+    await ctx.reply(
+      `✅ *Account linked!*\n\nYour Telegram is now connected to your VaultX account. Your likes and saves are synced.`,
+      { parse_mode: "Markdown", ...Markup.inlineKeyboard([[Markup.button.url("🎬 Open VaultX", APP_URL)]]) }
+    );
+  } catch {
+    await ctx.reply("❌ Something went wrong. Please try again.");
+  }
+});
+
 bot.command("profile", async (ctx) => {
   const { id, username } = ctx.from;
   const user = await registerUser(id, username);
