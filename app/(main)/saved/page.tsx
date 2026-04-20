@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Bookmark } from "lucide-react";
+import Link from "next/link";
+import { Bookmark, Play } from "lucide-react";
 import type { VideoDTO } from "@/types";
 
 export default function SavedPage() {
@@ -51,13 +52,41 @@ export default function SavedPage() {
 
 function SavedThumb({ video }: { video: VideoDTO }) {
   return (
-    <div className="relative aspect-[9/16] bg-black overflow-hidden">
+    <Link
+      href={`/?v=${encodeURIComponent(video.id)}`}
+      prefetch={false}
+      className="relative aspect-[9/16] bg-black overflow-hidden group active:opacity-80 transition-opacity"
+    >
       {video.thumbnail ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover" />
+        <img
+          src={video.thumbnail}
+          alt={video.title}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       ) : (
-        <div className="w-full h-full bg-white/5" />
+        // No thumbnail stored yet — render the first frame of the video itself.
+        // `preload="metadata"` and no `autoplay` keeps bandwidth low: the
+        // browser fetches just enough to decode a poster frame.
+        <video
+          src={video.url}
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        />
       )}
-    </div>
+
+      {/* Subtle overlay so the play icon + title remain legible on busy frames */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+      <div className="absolute top-1.5 right-1.5 text-white/90">
+        <Play size={14} strokeWidth={2.5} fill="currentColor" />
+      </div>
+
+      <div className="absolute bottom-1 left-1 right-1 text-[10px] text-white/90 line-clamp-2 leading-tight">
+        {video.title}
+      </div>
+    </Link>
   );
 }
