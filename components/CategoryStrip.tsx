@@ -18,8 +18,8 @@ export function CategoryStrip({ activeSlug }: { activeSlug?: string }) {
   if (categories.length === 0) return null;
 
   return (
-    <div className="absolute left-0 right-0 z-20 pointer-events-auto" style={{ top: 56 }}>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar px-3 py-2">
+    <div className="fixed left-0 right-0 z-20 pointer-events-auto" style={{ top: 0 }}>
+      <div className="flex gap-2 overflow-x-auto no-scrollbar px-3 py-2 pt-3">
         <Link
           href="/"
           className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium border transition-colors ${

@@ -21,12 +21,15 @@ import type { VideoDTO, CommentDTO } from "@/types";
 
 export interface VideoCardHandle {
   pause: () => void;
+  play: () => void;
+  setPreload: (v: string) => void;
+  loadBuffer: () => void;
 }
 
 interface VideoCardProps {
   video: VideoDTO;
   index: number;
-  onVisible?: (index: number) => void;
+  onBecomeActive?: (index: number) => void;
   muted?: boolean;
   onMuteToggle?: () => void;
 }
@@ -66,7 +69,7 @@ function formatViews(n: number): string {
 }
 
 export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
-  function VideoCard({ video, index, onVisible, muted = true, onMuteToggle }, ref) {
+  function VideoCard({ video, index, onBecomeActive, muted = true, onMuteToggle }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [shareOpen, setShareOpen] = useState(false);
@@ -77,10 +80,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     const [commentText, setCommentText] = useState("");
     const [commentPosting, setCommentPosting] = useState(false);
 
-    // 90% visibility threshold for autoplay
-    const isVisible = useIntersectionObserver(containerRef, {
-      threshold: 0.9,
-    });
+    const isVisible = useIntersectionObserver(containerRef, { threshold: 0.8 });
 
     const { liked, saved, likeCount, saveCount, toggleLike, toggleSave } =
       useInteraction(video.id, {
@@ -92,39 +92,50 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
     const { onPlay, onPause, onEnded } = useWatchEvent(video.id);
 
-    // Play / pause based on intersection
     useEffect(() => {
       const el = videoRef.current;
       if (!el) return;
-
       if (isVisible) {
-        el.play().catch(() => {});
-        onVisible?.(index);
+        if (onBecomeActive) {
+          onBecomeActive(index);
+        } else {
+          el.play().catch(() => {});
+        }
       } else {
         el.pause();
       }
-    }, [isVisible, index, onVisible]);
+    }, [isVisible, index, onBecomeActive]);
 
-    // Sync muted state imperatively — React's muted prop is not reactive
     useEffect(() => {
       const el = videoRef.current;
       if (!el) return;
       el.muted = muted;
-      // Resume playback after unmuting to unblock audio context
-      if (!muted && el.paused === false) {
+      if (!muted && !el.paused) {
         el.pause();
         el.play().catch(() => {});
       }
     }, [muted]);
 
-    // Expose pause handle to parent for cleanup
     useImperativeHandle(ref, () => ({
       pause() {
         videoRef.current?.pause();
       },
+      play() {
+        videoRef.current?.play().catch(() => {});
+      },
+      setPreload(v: string) {
+        const el = videoRef.current;
+        if (el) el.preload = v;
+      },
+      loadBuffer() {
+        const el = videoRef.current;
+        if (el) {
+          el.preload = "auto";
+          el.load();
+        }
+      },
     }));
 
-    // Free memory on unmount
     useEffect(() => {
       const el = videoRef.current;
       return () => {
@@ -195,17 +206,17 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     return (
       <div
         ref={containerRef}
-        className="relative w-full h-dvh snap-start overflow-hidden bg-black flex-shrink-0"
+        className="relative w-full snap-start overflow-hidden bg-black flex-shrink-0"
+        style={{ height: "100dvh" }}
       >
-        {/* Video */}
+        {/* Video — no autoPlay; triggered via JS only */}
         <video
           ref={videoRef}
           src={`/api/redgifs/${video.reddit_id}`}
-          autoPlay
           muted={muted}
           loop
           playsInline
-          // preload="auto" is set below dynamically via data-attr to signal intent
+          preload="none"
           className="absolute inset-0 w-full h-full object-cover"
           onPlay={onPlay}
           onPause={() => onPause(video.duration)}
@@ -213,10 +224,13 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           poster={video.thumbnail}
         />
 
-        {/* Top gradient for nav readability */}
-        <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
-        {/* Bottom gradient overlay */}
-        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
+        {/* Top gradient for category strip readability */}
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+        {/* Bottom gradient overlay: transparent → rgba(0,0,0,0.85) */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-2/3 pointer-events-none"
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85), transparent)" }}
+        />
 
         {/* Bottom-left: title + category + views */}
         <div className="absolute bottom-6 left-4 right-20 z-10">
@@ -231,7 +245,6 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
         {/* Right sidebar */}
         <div className="absolute right-3 bottom-10 z-10 flex flex-col items-center gap-5">
-          {/* Mute / Unmute */}
           {onMuteToggle && (
             <SidebarAction onPress={onMuteToggle} label={muted ? "Unmute" : "Mute"}>
               {muted ? (
@@ -250,12 +263,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             </SidebarAction>
           )}
 
-          {/* Like */}
-          <SidebarAction
-            onPress={toggleLike}
-            label={liked ? "Unlike" : "Like"}
-            active={liked}
-          >
+          <SidebarAction onPress={toggleLike} label={liked ? "Unlike" : "Like"} active={liked}>
             <HeartIcon filled={liked} />
             <AnimatedCount value={likeCount} />
           </SidebarAction>
@@ -273,7 +281,6 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             <span className="text-xs">{commentTotal || (commentsOpen ? comments.length : 0)}</span>
           </SidebarAction>
 
-          {/* Share */}
           <SidebarAction onPress={handleShare} label="Share">
             <svg
               className="w-7 h-7"
@@ -290,32 +297,20 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
             </svg>
           </SidebarAction>
 
-          {/* Save */}
-          <SidebarAction
-            onPress={toggleSave}
-            label={saved ? "Unsave" : "Save"}
-            active={saved}
-          >
+          <SidebarAction onPress={toggleSave} label={saved ? "Unsave" : "Save"} active={saved}>
             <BookmarkIcon filled={saved} />
             <AnimatedCount value={saveCount} />
           </SidebarAction>
         </div>
 
-        {/* Share sheet */}
-        <BottomSheet
-          open={shareOpen}
-          onClose={() => setShareOpen(false)}
-          title="Share"
-        >
+        <BottomSheet open={shareOpen} onClose={() => setShareOpen(false)} title="Share">
           <div className="flex flex-col gap-2">
             <button
               type="button"
               onClick={copyLink}
               className="flex items-center gap-3 py-3 text-sm text-text-primary hover:text-accent transition-colors"
             >
-              <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-lg">
-                🔗
-              </span>
+              <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-lg">🔗</span>
               Copy link
             </button>
             <button
@@ -323,19 +318,13 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
               onClick={openTelegramShare}
               className="flex items-center gap-3 py-3 text-sm text-text-primary hover:text-accent transition-colors"
             >
-              <span className="w-9 h-9 rounded-full bg-[#229ED9]/20 flex items-center justify-center text-lg">
-                ✈️
-              </span>
+              <span className="w-9 h-9 rounded-full bg-[#229ED9]/20 flex items-center justify-center text-lg">✈️</span>
               Open in Telegram
             </button>
           </div>
         </BottomSheet>
 
-        <BottomSheet
-          open={commentsOpen}
-          onClose={() => setCommentsOpen(false)}
-          title="Comments"
-        >
+        <BottomSheet open={commentsOpen} onClose={() => setCommentsOpen(false)} title="Comments">
           <div className="flex flex-col gap-3 max-h-[55dvh]">
             {commentsLoading ? (
               <p className="text-sm text-white/40 py-6 text-center">Loading…</p>
@@ -383,21 +372,18 @@ interface SidebarActionProps {
   children: React.ReactNode;
 }
 
-function SidebarAction({
-  onPress,
-  label,
-  active = false,
-  children,
-}: SidebarActionProps) {
+function SidebarAction({ onPress, label, active = false, children }: SidebarActionProps) {
   return (
     <motion.button
       type="button"
       aria-label={label}
-      onClick={onPress}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPress();
+      }}
       whileTap={{ scale: 0.78 }}
       transition={{ type: "spring", stiffness: 500, damping: 22 }}
-      className={`flex flex-col items-center gap-0.5 focus:outline-none
-        ${active ? "text-accent" : "text-white"}`}
+      className={`flex flex-col items-center gap-0.5 focus:outline-none ${active ? "text-accent" : "text-white"}`}
     >
       {children}
     </motion.button>

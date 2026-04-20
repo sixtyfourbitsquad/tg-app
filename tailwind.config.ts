@@ -17,7 +17,7 @@ const config: Config = {
         "text-muted": "#888888",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
+        sans: ["system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
       },
       maxWidth: {
         mobile: "480px",

@@ -76,7 +76,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
               className={`
                 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium
-                shadow-lg pointer-events-auto cursor-pointer
+                pointer-events-auto cursor-pointer
                 backdrop-blur-sm
                 ${TYPE_STYLES[t.type]}
               `}

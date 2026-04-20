@@ -15,7 +15,14 @@ export function BottomNav() {
   const router = useRouter();
 
   return (
-    <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-around h-14 bg-transparent">
+    <nav
+      className="fixed bottom-0 inset-x-0 z-50 flex items-center justify-around h-14"
+      style={{
+        background: "rgba(0,0,0,0.9)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+      }}
+    >
       {TABS.map(({ icon: Icon, href, label }) => {
         const active = pathname === href;
         return (
@@ -28,11 +35,8 @@ export function BottomNav() {
             <Icon
               size={22}
               strokeWidth={active ? 2.2 : 1.8}
-              className="transition-all duration-150"
-              style={{
-                color: active ? "#ff3b5c" : "#555555",
-                filter: active ? "drop-shadow(0 0 6px #ff3b5c88)" : "none",
-              }}
+              className="transition-colors duration-150"
+              style={{ color: active ? "#ff3b5c" : "#555555" }}
             />
           </button>
         );

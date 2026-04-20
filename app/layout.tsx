@@ -1,15 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/Toast";
 import { UserProvider } from "@/context/UserContext";
 import { ApiClientInit } from "@/components/ApiClientInit";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "NFWS — Watch",
@@ -31,11 +24,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="nfws" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="nfws"
+      suppressHydrationWarning
+      style={{ backgroundColor: "#0a0a0a" }}
+    >
       <head>
         <script src="https://telegram.org/js/telegram-web-app.js" async />
       </head>
-      <body className={`${inter.variable} font-sans bg-bg-primary text-text-primary`}>
+      <body
+        className="bg-bg-primary text-text-primary"
+        style={{ backgroundColor: "#0a0a0a", minHeight: "100dvh" }}
+      >
         <UserProvider>
           <ApiClientInit />
           <ToastProvider>

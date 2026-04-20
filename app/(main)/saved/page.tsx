@@ -18,7 +18,7 @@ export default function SavedPage() {
   }, []);
 
   return (
-    <div className="h-dvh bg-bg-primary text-text-primary flex flex-col" style={{ paddingTop: 56 }}>
+    <div className="h-dvh bg-bg-primary text-text-primary flex flex-col pb-14">
       <div className="px-4 pt-6 pb-3">
         <h1 className="text-xl font-bold">Saved</h1>
         <p className="text-xs text-white/40 mt-0.5">{videos.length} videos</p>

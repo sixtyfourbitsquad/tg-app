@@ -5,7 +5,7 @@ import axios from "axios";
 import type { FeedResponse, VideoDTO } from "@/types";
 
 const LIMIT = 10;
-const PREFETCH_THRESHOLD = 3; // fetch next page when this many videos remain
+const PREFETCH_THRESHOLD = 2; // fetch next page when this many videos remain
 
 const fetcher = (url: string) =>
   axios.get<FeedResponse>(url).then((r) => r.data);
@@ -24,12 +24,10 @@ export function useVideoFeed(category?: string) {
     return `/api/videos?${params.toString()}`;
   };
 
-  const { data, error, size, setSize, isLoading, isValidating } =
+  const { data, error, size, setSize, isLoading, isValidating, mutate } =
     useSWRInfinite(getKey, fetcher, {
       revalidateOnFocus: false,
       revalidateFirstPage: false,
-      // Keep previous data while fetching next page — prevents re-render flash
-      keepPreviousData: true,
     });
 
   const videos: VideoDTO[] = data?.flatMap((p) => p.videos) ?? [];
@@ -53,6 +51,7 @@ export function useVideoFeed(category?: string) {
     isLoading,
     isLoadingMore,
     error,
+    mutate,
     onVideoVisible,
   };
 }

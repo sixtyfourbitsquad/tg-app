@@ -112,7 +112,7 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <div className="h-dvh bg-bg-primary text-text-primary flex flex-col" style={{ paddingTop: 56 }}>
+    <div className="h-dvh bg-bg-primary text-text-primary flex flex-col pb-14">
       <div className="px-4 pt-6 pb-3 flex items-start justify-between gap-2">
         <div>
           <h1 className="text-xl font-bold">Profile</h1>
