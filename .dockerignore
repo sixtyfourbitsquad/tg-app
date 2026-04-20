@@ -17,3 +17,7 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 scripts/
+# bulk-upload runs *inside* the container (see Dockerfile runner stage),
+# so we re-include it after ignoring the rest of scripts/. The PC-side
+# helpers (deploy-videos.sh, download-tg-channel.py) stay out of the image.
+!scripts/bulk-upload.cjs
