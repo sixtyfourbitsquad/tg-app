@@ -63,6 +63,17 @@ OUTPUT_DIR = "./downloaded_videos"
 BATCH_SIZE = 500       # how many messages to pull per iter_messages() batch
 MAX_SIZE_MB = 15       # videos larger than this are skipped
 SESSION_NAME = "tg_downloader"  # creates tg_downloader.session next to script
+
+# ── Speed knobs ──────────────────────────────────────────────────
+# Raise CONCURRENCY if you have bandwidth headroom. 4 is a safe
+# default — Telethon shares a single MTProto connection per DC so
+# pushing past 8 usually gives diminishing returns and can trigger
+# Telegram rate-limiting.
+CONCURRENCY = 4
+# Telethon's default is 64 KB. 512 KB halves the number of round
+# trips for every file >1 MB. Must be a power-of-two multiple of
+# 4 and no larger than 1024 (Telegram server limit).
+PART_SIZE_KB = 512
 # ─────────────────────────────────────────────────────────────────
 
 
@@ -248,6 +259,8 @@ async def run() -> int:
     _log(f"Channel       : {CHANNEL}")
     _log(f"Batch size    : {BATCH_SIZE}")
     _log(f"Max size      : {MAX_SIZE_MB} MB")
+    _log(f"Concurrency   : {CONCURRENCY}")
+    _log(f"Part size     : {PART_SIZE_KB} KB")
     _log("")
 
     # Keep session file next to the script so re-runs don't re-auth.
@@ -285,6 +298,7 @@ async def run() -> int:
             _log(f"\nBatch {batch_index}: scanning {len(batch)} messages (offset_id={offset_id})")
 
             videos: list[tuple[Message, VideoMedia]] = []
+            to_download: list[tuple[Message, VideoMedia, Path]] = []
             for msg in batch:
                 info = _classify(msg)
                 if info is None:
@@ -309,36 +323,58 @@ async def run() -> int:
                     stats["skipped_exists"] += 1
                     continue
 
-                try:
-                    with tqdm(
-                        total=info.size if info.size > 0 else None,
-                        unit="B",
-                        unit_scale=True,
-                        unit_divisor=1024,
-                        desc=info.filename[:40],
-                        leave=False,
-                    ) as bar:
-                        def _progress(current: int, total: int, _bar=bar) -> None:
-                            if total and _bar.total is None:
-                                _bar.total = total
-                            _bar.n = current
-                            _bar.refresh()
+                to_download.append((msg, info, target))
 
-                        tmp = target.with_suffix(target.suffix + ".part")
-                        await client.download_media(msg, file=str(tmp), progress_callback=_progress)
-                        os.replace(tmp, target)
+            # Fan out the batch's downloads across CONCURRENCY workers.
+            if to_download:
+                sem = asyncio.Semaphore(CONCURRENCY)
+                total_bytes = sum(i.size for _, i, _ in to_download)
 
-                    stats["downloaded"] += 1
-                    _log(f"  done  msg#{info.message_id} {info.filename}")
-                except Exception as exc:
-                    stats["errors"] += 1
-                    _log(f"  ERROR msg#{info.message_id} {info.filename}: {exc}")
-                    tmp = target.with_suffix(target.suffix + ".part")
-                    if tmp.exists():
-                        try:
-                            tmp.unlink()
-                        except OSError:
-                            pass
+                with tqdm(
+                    total=total_bytes if total_bytes > 0 else len(to_download),
+                    unit="B" if total_bytes > 0 else "file",
+                    unit_scale=True,
+                    unit_divisor=1024,
+                    desc=f"  Batch {batch_index}",
+                    leave=False,
+                ) as batch_bar:
+                    async def _grab(msg: Message, info: VideoMedia, target: Path) -> None:
+                        async with sem:
+                            tmp = target.with_suffix(target.suffix + ".part")
+                            file_prev = {"n": 0}
+
+                            def _progress(current: int, total: int) -> None:
+                                if total_bytes > 0:
+                                    delta = current - file_prev["n"]
+                                    if delta > 0:
+                                        batch_bar.update(delta)
+                                        file_prev["n"] = current
+
+                            try:
+                                await client.download_media(
+                                    msg,
+                                    file=str(tmp),
+                                    part_size_kb=PART_SIZE_KB,
+                                    progress_callback=_progress,
+                                )
+                                os.replace(tmp, target)
+                                stats["downloaded"] += 1
+                                if total_bytes == 0:
+                                    batch_bar.update(1)
+                            except Exception as exc:
+                                stats["errors"] += 1
+                                tqdm.write(
+                                    f"  ERROR msg#{info.message_id} {info.filename}: {exc}"
+                                )
+                                if tmp.exists():
+                                    try:
+                                        tmp.unlink()
+                                    except OSError:
+                                        pass
+
+                    await asyncio.gather(
+                        *(_grab(m, i, t) for m, i, t in to_download)
+                    )
 
             # Paginate older: offset_id must be the smallest id we just saw.
             offset_id = min(m.id for m in batch)
