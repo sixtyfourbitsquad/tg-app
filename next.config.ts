@@ -9,6 +9,9 @@ import type { NextConfig } from "next";
 // $VIDEOS_DIR defaults to /home/adii/videos.
 
 const nextConfig: NextConfig = {
+  // Produce a self-contained server bundle at .next/standalone so the Docker
+  // image only needs node_modules Next actually uses (see Dockerfile).
+  output: "standalone",
   allowedDevOrigins: ["35.200.162.160"],
   images: {
     remotePatterns: [
