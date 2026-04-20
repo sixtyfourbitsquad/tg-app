@@ -10,6 +10,32 @@ import { logger } from "../lib/logger";
 const prisma = new PrismaClient();
 const CRON_SCHEDULE = process.env.PIPELINE_CRON ?? "0 */6 * * *";
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function fetchWithRetry(
+  token: string,
+  tag: string,
+  limit: number,
+  retries = 3
+): Promise<Awaited<ReturnType<typeof fetchRedgifsVideos>>> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fetchRedgifsVideos(token, tag, limit);
+    } catch (err: unknown) {
+      const status =
+        (err as { response?: { status?: number } })?.response?.status;
+      if (status === 429 && attempt < retries) {
+        const wait = attempt * 5000; // 5s, 10s, 15s
+        logger.warn(`Rate limited on "${tag}", retrying in ${wait}ms (attempt ${attempt}/${retries})`);
+        await sleep(wait);
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw new Error("Unreachable");
+}
+
 function tagToSlug(tag: string): string {
   return tag.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 }
@@ -64,14 +90,18 @@ export async function runPipeline(): Promise<{
 
     let gifs;
     try {
-      gifs = await fetchRedgifsVideos(token, tag, limit);
+      gifs = await fetchWithRetry(token, tag, limit);
       logger.info(`Found ${gifs.length} videos for tag "${tag}"`);
     } catch (err) {
       const msg = `Failed to fetch tag "${tag}": ${err instanceof Error ? err.message : err}`;
       logger.error(msg);
       errors.push(msg);
+      await sleep(3000); // back off before next tag even on failure
       continue;
     }
+
+    // Pace requests — Redgifs rate limit is strict
+    await sleep(2000);
 
     for (const gif of gifs) {
       // Composite key: gifId__categorySlug — same gif can exist per-category
