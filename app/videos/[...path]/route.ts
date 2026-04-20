@@ -7,7 +7,12 @@ import { logger } from "@/lib/logger";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ROOT = resolve(process.env.VIDEOS_DIR ?? "/home/adii/videos");
+// Resolve ROOT per-request instead of at module scope so that env var changes
+// (docker compose env updates, k8s config reload, …) take effect without a
+// full rebuild. `resolve()` is cheap; doing it on every request is fine.
+function videosRoot(): string {
+  return resolve(process.env.VIDEOS_DIR ?? "/home/adii/videos");
+}
 const MAX_AGE_SEC = 3600;
 
 const MIME: Record<string, string> = {
@@ -18,10 +23,10 @@ const MIME: Record<string, string> = {
   ".m4v": "video/mp4",
 };
 
-function resolveSafe(parts: string[]): string | null {
-  const joined = join(ROOT, ...parts);
+function resolveSafe(root: string, parts: string[]): string | null {
+  const joined = join(root, ...parts);
   const abs = resolve(joined);
-  if (!abs.startsWith(ROOT + "/") && abs !== ROOT) return null;
+  if (!abs.startsWith(root + "/") && abs !== root) return null;
   return abs;
 }
 
@@ -51,17 +56,27 @@ export async function GET(
 ) {
   const { path } = await params;
   if (!Array.isArray(path) || path.length === 0) {
+    logger.warn("videos route: empty path", { path });
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const abs = resolveSafe(path);
-  if (!abs) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const root = videosRoot();
+  const abs = resolveSafe(root, path);
+  if (!abs) {
+    logger.warn("videos route: resolveSafe rejected", { root, path });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   let stat;
   try {
     stat = statSync(abs);
     if (!stat.isFile()) throw new Error("not a file");
-  } catch {
+  } catch (err) {
+    logger.warn("videos route: stat failed", {
+      root,
+      abs,
+      err: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -106,7 +121,7 @@ export async function HEAD(
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path } = await params;
-  const abs = resolveSafe(path);
+  const abs = resolveSafe(videosRoot(), path);
   if (!abs) return new NextResponse(null, { status: 404 });
   try {
     const stat = statSync(abs);
