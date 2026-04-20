@@ -7,11 +7,18 @@ import { logger } from "@/lib/logger";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Resolve ROOT per-request instead of at module scope so that env var changes
-// (docker compose env updates, k8s config reload, …) take effect without a
-// full rebuild. `resolve()` is cheap; doing it on every request is fine.
+// Resolve ROOT per-request so env var changes (compose edits, k8s config
+// reloads, …) take effect without a full rebuild.
+//
+// IMPORTANT: use bracket notation with a non-literal key. Next.js's server
+// build otherwise constant-folds `process.env.VIDEOS_DIR` to whatever was
+// in the environment during `next build` (often `undefined` inside Docker
+// because `.env` is excluded from the build context), baking the fallback
+// into the compiled output and making runtime overrides a no-op.
+const VIDEOS_DIR_KEY = "VIDEOS_" + "DIR";
 function videosRoot(): string {
-  return resolve(process.env.VIDEOS_DIR ?? "/home/adii/videos");
+  const env = process.env as Record<string, string | undefined>;
+  return resolve(env[VIDEOS_DIR_KEY] ?? "/home/adii/videos");
 }
 const MAX_AGE_SEC = 3600;
 
