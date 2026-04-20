@@ -12,9 +12,11 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/nfws_db
       REDIS_URL: redis://redis:6379
-      # Container-local path where host's $VIDEOS_DIR is mounted. MUST be
-      # outside /app/public otherwise Next's static file handler claims the
-      # URL and 404s before our /videos/[...path]/route.ts ever runs.
+      # Container-local path where the host's video library is mounted.
+      # MUST be outside /app/public otherwise Next's static file handler
+      # claims /videos/* and 404s before our route handler runs. The build
+      # stage of the Dockerfile bakes this same value into the compiled
+      # server bundle, so change both together.
       VIDEOS_DIR: /app/videos-data
     depends_on:
       postgres:
@@ -24,9 +26,15 @@ services:
     volumes:
       - ./secrets:/app/secrets:ro
       - app_logs:/app/logs
-      # Host videos directory mounted read-only. Served exclusively by the
-      # dynamic /videos/[...path] route handler (see VIDEOS_DIR above).
-      - ${VIDEOS_DIR:-/home/adii/videos}:/app/videos-data:ro
+      # Host videos directory (from HOST_VIDEOS_DIR, default /home/adii/videos)
+      # mounted read-only inside the container at /app/videos-data.
+      #
+      # NOTE: do NOT reuse VIDEOS_DIR for this host path. That variable
+      # describes the *container-internal* location and is inlined into the
+      # server bundle at build time; reusing it here caused compose to
+      # substitute the in-container path onto the host side and silently
+      # mount an empty directory.
+      - ${HOST_VIDEOS_DIR:-/home/adii/videos}:/app/videos-data:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 30s
