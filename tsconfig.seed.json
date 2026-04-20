@@ -7,5 +7,5 @@
     "outDir": "dist-seed",
     "esModuleInterop": true
   },
-  "include": ["prisma/seed.ts", "pipeline/**/*.ts", "lib/**/*.ts", "types/**/*.ts"]
+  "include": ["prisma/seed.ts", "lib/**/*.ts", "types/**/*.ts"]
 }

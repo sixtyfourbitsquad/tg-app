@@ -11,8 +11,7 @@
     "db:generate": "prisma generate",
     "db:seed": "ts-node --project tsconfig.seed.json prisma/seed.ts",
     "db:studio": "prisma studio",
-    "pipeline:run": "tsx pipeline/scheduler.ts --run",
-    "pipeline:scheduler": "tsx pipeline/scheduler.ts",
+    "bulk:upload": "tsx --env-file .env scripts/bulk-upload.ts",
     "bot": "tsx --env-file .env bot/index.ts"
   },
   "dependencies": {
@@ -28,7 +27,6 @@
     "lucide-react": "^1.8.0",
     "next": "^16.2.4",
     "next-auth": "^4.24.8",
-    "node-cron": "^4.2.1",
     "react": "^18",
     "react-dom": "^18",
     "swr": "^2.2.5",
@@ -39,9 +37,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/fluent-ffmpeg": "^2.1.27",
     "@types/node": "^20",
-    "@types/node-cron": "^3.0.11",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",

@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   const saves = await db.save.findMany({
     where: { user_id: user.id },
-    include: { video: { include: { category: true } } },
+    include: { video: true },
     orderBy: { video: { created_at: "desc" } },
   });
 
@@ -40,12 +40,12 @@ export async function GET(req: NextRequest) {
     url: v.url,
     thumbnail: v.thumbnail,
     title: v.title,
-    category: { id: v.category.id, name: v.category.name, slug: v.category.slug },
+    file_size: v.file_size.toString(),
+    original_filename: v.original_filename,
     duration: v.duration,
     views: v.views,
     like_count: 0,
     save_count: 0,
-    reddit_id: v.reddit_id,
     created_at: v.created_at.toISOString(),
     liked: false,
     saved: true,

@@ -10,6 +10,7 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
+import { Volume2, VolumeX } from "lucide-react";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { useInteraction } from "@/hooks/useInteraction";
 import { useWatchEvent } from "@/hooks/useWatchEvent";
@@ -30,6 +31,7 @@ interface VideoCardProps {
   index: number;
   onBecomeActive?: (index: number) => void;
   muted?: boolean;
+  onToggleMute?: () => void;
 }
 
 function HeartIcon({ filled }: { filled: boolean }) {
@@ -55,7 +57,10 @@ function formatViews(n: number): string {
 }
 
 export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
-  function VideoCard({ video, index, onBecomeActive, muted = true }, ref) {
+  function VideoCard(
+    { video, index, onBecomeActive, muted = true, onToggleMute },
+    ref,
+  ) {
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [shareOpen, setShareOpen] = useState(false);
@@ -92,11 +97,11 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       }
     }, [isVisible, index, onBecomeActive]);
 
-    // Always muted — no toggle exposed
+    // Keep the underlying <video> element in sync with the shared mute state.
     useEffect(() => {
       const el = videoRef.current;
-      if (el) el.muted = true;
-    }, []);
+      if (el) el.muted = muted;
+    }, [muted]);
 
     useImperativeHandle(ref, () => ({
       pause() { videoRef.current?.pause(); },
@@ -172,8 +177,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
         {/* Video — true fullscreen, no bars */}
         <video
           ref={videoRef}
-          src={`/api/redgifs/${video.reddit_id}`}
-          muted
+          src={video.url}
           loop
           playsInline
           preload="none"
@@ -194,14 +198,8 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           }}
         />
 
-        {/* Bottom-left: category pill + title + views */}
+        {/* Bottom-left: title + views */}
         <div className="absolute bottom-20 left-4 right-16 z-10">
-          <span
-            className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold text-white capitalize"
-            style={{ background: "#ff3b5c" }}
-          >
-            {video.category.name}
-          </span>
           <h2
             className="mt-1.5 leading-snug line-clamp-2 text-white"
             style={{ fontSize: 14, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
@@ -213,8 +211,19 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
           </p>
         </div>
 
-        {/* Right sidebar — like, comment, share, save */}
+        {/* Right sidebar — mute, like, comment, share, save */}
         <div className="absolute right-3 bottom-20 z-10 flex flex-col items-center gap-6">
+          <SidebarAction
+            onPress={() => onToggleMute?.()}
+            label={muted ? "Unmute" : "Mute"}
+          >
+            {muted ? (
+              <VolumeX size={28} strokeWidth={1.8} />
+            ) : (
+              <Volume2 size={28} strokeWidth={1.8} />
+            )}
+          </SidebarAction>
+
           <SidebarAction onPress={toggleLike} label={liked ? "Unlike" : "Like"} active={liked}>
             <HeartIcon filled={liked} />
             <AnimatedCount value={likeCount} />

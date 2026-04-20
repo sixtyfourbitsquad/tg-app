@@ -3,22 +3,15 @@ export interface VideoDTO {
   url: string;
   thumbnail: string;
   title: string;
-  category: CategoryDTO;
+  file_size: string;
+  original_filename: string;
   duration: number;
   views: number;
   like_count: number;
   save_count: number;
-  reddit_id: string | null;
   created_at: string;
   liked?: boolean;
   saved?: boolean;
-}
-
-export interface CategoryDTO {
-  id: string;
-  name: string;
-  slug: string;
-  video_count?: number;
 }
 
 export interface UserDTO {
@@ -39,6 +32,8 @@ export interface FeedResponse {
   videos: VideoDTO[];
   nextCursor: string | null;
   hasMore: boolean;
+  /** Session seed echoed back from the server for seeded random ordering. */
+  seed?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -52,14 +47,6 @@ export interface PaginatedResponse<T> {
 export interface ApiError {
   error: string;
   code?: string;
-}
-
-export interface PipelineLogDTO {
-  id: string;
-  status: "success" | "partial" | "failed";
-  videos_fetched: number;
-  errors: unknown;
-  ran_at: string;
 }
 
 export interface InteractionPayload {

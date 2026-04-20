@@ -14,6 +14,8 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/nfws_db
       REDIS_URL: redis://redis:6379
+      # Container-local path where host's $VIDEOS_DIR is mounted.
+      VIDEOS_DIR: /app/public/videos
     depends_on:
       postgres:
         condition: service_healthy
@@ -22,35 +24,15 @@ services:
     volumes:
       - ./secrets:/app/secrets:ro
       - app_logs:/app/logs
+      # Host videos directory mounted read-only so both public/ static serving
+      # and the Next /videos/[...path] route can stream files.
+      - ${VIDEOS_DIR:-/home/adii/videos}:/app/public/videos:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 15s
-    networks:
-      - nfws
-
-  # ── Pipeline Scheduler ───────────────────────────────────────────────────
-  pipeline:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    command: ["node", "-e", "require('./pipeline/scheduler')"]
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/nfws_db
-      REDIS_URL: redis://redis:6379
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./secrets:/app/secrets:ro
-      - pipeline_tmp:/tmp
     networks:
       - nfws
 
@@ -92,7 +74,6 @@ volumes:
   postgres_data:
   redis_data:
   app_logs:
-  pipeline_tmp:
 
 networks:
   nfws:

@@ -41,6 +41,16 @@ key.txt.pub
 id_rsa
 id_ed25519
 
+# Telegram downloader artifacts (PC side, never commit)
+downloaded_videos/
+scripts/*.session
+scripts/*.session-journal
+
+# Local-only video mount (served at /videos on the VPS)
+public/videos/*
+!public/videos/.gitkeep
+!public/videos/README.md
+
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts

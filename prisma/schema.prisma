@@ -25,33 +25,23 @@ model User {
   @@map("users")
 }
 
-model Category {
-  id     String  @id @default(cuid())
-  name   String  @unique
-  slug   String  @unique
-  videos Video[]
-
-  @@map("categories")
-}
-
 model Video {
-  id          String   @id @default(cuid())
-  url         String
-  thumbnail   String
-  title       String
-  category_id String
-  duration    Int      @default(0)
-  views       Int      @default(0)
-  reddit_id   String?  @unique
-  created_at  DateTime @default(now())
+  id                String   @id @default(cuid())
+  url               String   // public URL path e.g. /videos/filename.mp4
+  thumbnail         String
+  title             String
+  file_path         String   @default("") // absolute path on the VPS
+  file_size         BigInt   @default(0)
+  original_filename String   @default("")
+  duration          Int      @default(0)
+  views             Int      @default(0)
+  created_at        DateTime @default(now())
 
-  category     Category     @relation(fields: [category_id], references: [id])
   likes        Like[]
   saves        Save[]
   watch_events WatchEvent[]
   comments     Comment[]
 
-  @@index([category_id])
   @@index([created_at])
   @@index([views])
   @@map("videos")
@@ -108,15 +98,4 @@ model WatchEvent {
   @@index([user_id])
   @@index([video_id])
   @@map("watch_events")
-}
-
-model PipelineLog {
-  id             String   @id @default(cuid())
-  status         String
-  videos_fetched Int      @default(0)
-  errors         Json?
-  ran_at         DateTime @default(now())
-
-  @@index([ran_at])
-  @@map("pipeline_logs")
 }

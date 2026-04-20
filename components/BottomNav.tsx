@@ -1,13 +1,13 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Compass, Bookmark, User } from "lucide-react";
+import { Home, TrendingUp, Bookmark, User } from "lucide-react";
 
 const TABS = [
-  { icon: Home,     href: "/",        label: "Home"    },
-  { icon: Compass,  href: "/explore", label: "Explore" },
-  { icon: Bookmark, href: "/saved",   label: "Saved"   },
-  { icon: User,     href: "/profile", label: "Profile" },
+  { icon: Home,        href: "/",         label: "Home"     },
+  { icon: TrendingUp,  href: "/trending", label: "Trending" },
+  { icon: Bookmark,    href: "/saved",    label: "Saved"    },
+  { icon: User,        href: "/profile",  label: "Profile"  },
 ];
 
 export function BottomNav() {

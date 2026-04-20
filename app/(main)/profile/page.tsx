@@ -116,12 +116,6 @@ export default function ProfilePage() {
       <div className="px-4 pt-6 pb-3 flex items-start justify-between gap-2">
         <div>
           <h1 className="text-xl font-bold">Profile</h1>
-          <a
-            href="/admin/pipeline"
-            className="text-[10px] text-white/25 hover:text-white/50 mt-1 inline-block"
-          >
-            Pipeline logs
-          </a>
         </div>
       </div>
 

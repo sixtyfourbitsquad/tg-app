@@ -1,8 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import useSWRInfinite from "swr/infinite";
 import axios from "axios";
 import type { FeedResponse, VideoDTO } from "@/types";
+
+export type FeedSort = "random" | "trending";
 
 const LIMIT = 10;
 const PREFETCH_THRESHOLD = 2; // fetch next page when this many videos remain
@@ -10,15 +13,26 @@ const PREFETCH_THRESHOLD = 2; // fetch next page when this many videos remain
 const fetcher = (url: string) =>
   axios.get<FeedResponse>(url).then((r) => r.data);
 
-export function useVideoFeed(category?: string) {
+function generateSeed(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+export function useVideoFeed(sort: FeedSort = "random") {
+  // One seed per hook instance so each visit to the feed gets a different
+  // order while pagination within the session stays consistent.
+  const seed = useMemo(() => (sort === "random" ? generateSeed() : null), [sort]);
+
   const getKey = (
     pageIndex: number,
-    previousData: FeedResponse | null
+    previousData: FeedResponse | null,
   ): string | null => {
     if (previousData && !previousData.hasMore) return null;
 
-    const params = new URLSearchParams({ limit: String(LIMIT) });
-    if (category) params.set("category", category);
+    const params = new URLSearchParams({ limit: String(LIMIT), sort });
+    if (seed) params.set("seed", seed);
     if (previousData?.nextCursor) params.set("cursor", previousData.nextCursor);
 
     return `/api/videos?${params.toString()}`;

@@ -14,7 +14,6 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   const video = await db.video.findUnique({
     where: { id: videoId },
-    include: { category: true },
   });
   if (!video) {
     return NextResponse.json({ error: "Video not found" }, { status: 404 });
@@ -38,16 +37,12 @@ export async function GET(req: NextRequest, { params }: Params) {
     url: video.url,
     thumbnail: video.thumbnail,
     title: video.title,
-    category: {
-      id: video.category.id,
-      name: video.category.name,
-      slug: video.category.slug,
-    },
+    file_size: video.file_size.toString(),
+    original_filename: video.original_filename,
     duration: video.duration,
     views: video.views,
     like_count: likeCount,
     save_count: saveCount,
-    reddit_id: video.reddit_id,
     created_at: video.created_at.toISOString(),
     liked: !!liked,
     saved: !!saved,

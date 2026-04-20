@@ -25,6 +25,17 @@ server {
 
   client_max_body_size 20m;
 
+  # Serve video files directly from disk with Range support. Adjust the
+  # `alias` path to wherever you actually store .mp4 files on the VPS.
+  location /videos/ {
+    alias /home/adii/videos/;
+    add_header Accept-Ranges bytes;
+    add_header Cache-Control "public, max-age=3600";
+    access_log off;
+    sendfile on;
+    tcp_nopush on;
+  }
+
   # Proxy ALL paths to Node (including /_next/static for JS/CSS).
   # If only "/" is proxied, the app shell loads but chunks 404 → blank white screen.
   location / {

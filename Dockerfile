@@ -24,9 +24,6 @@ RUN npm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install ffmpeg and other system deps
-RUN apk add --no-cache ffmpeg
-
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
