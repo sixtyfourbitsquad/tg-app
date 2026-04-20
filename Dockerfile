@@ -36,10 +36,15 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma schema for runtime migrations
+# Copy Prisma schema + CLI + engines for runtime migrations.
+# Without node_modules/prisma the CLI would be pulled from the registry on
+# every `npx prisma …` call, which is both slow and, on Prisma 7+, incompatible
+# with our v5-era schema syntax. Pin everything at build time instead.
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
 # Create logs dir
 RUN mkdir -p /app/logs && chown nextjs:nodejs /app/logs
