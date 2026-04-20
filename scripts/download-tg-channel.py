@@ -40,6 +40,7 @@ try:
         DocumentAttributeVideo,
         Message,
         MessageMediaDocument,
+        PeerChannel,
     )
 except ImportError:  # pragma: no cover - user-facing import guard
     sys.stderr.write(
@@ -66,6 +67,63 @@ SESSION_NAME = "tg_downloader"  # creates tg_downloader.session next to script
 
 
 MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
+NUMERIC_ID_RE = re.compile(r"^-?\d+$")
+
+
+async def _resolve_channel(client: "TelegramClient", raw: str):
+    """Resolve a Telegram channel identifier to a usable entity.
+
+    Supports:
+      * @username / https://t.me/username (public channels, works immediately)
+      * https://t.me/+<hash> or t.me/joinchat/<hash> (private invite links)
+      * Numeric IDs like "-1002578124939" or "2578124939" (private channels
+        where you're already a member — the entity cache must be primed first)
+    """
+    raw = raw.strip()
+    if not raw:
+        _fatal("CHANNEL is empty")
+
+    # Public username / invite link — Telethon handles both in one call.
+    if not NUMERIC_ID_RE.match(raw):
+        try:
+            return await client.get_entity(raw)
+        except Exception as exc:
+            _fatal(f"could not resolve channel '{raw}': {exc}")
+
+    # Numeric ID path. Telethon needs the entity cached in the current session
+    # before it can resolve a raw -100… id, so prime it via get_dialogs().
+    channel_id = int(raw)
+    stripped = channel_id
+    # User-visible channel ids are -100<real_id>; the API uses just <real_id>.
+    if channel_id < 0:
+        s = str(channel_id).lstrip("-")
+        if s.startswith("100"):
+            s = s[3:]
+        stripped = int(s)
+
+    _log("Numeric channel id detected — priming dialog cache (this can take a moment)…")
+    found = None
+    async for dialog in client.iter_dialogs():
+        entity = dialog.entity
+        ent_id = getattr(entity, "id", None)
+        if ent_id == stripped or ent_id == channel_id:
+            found = entity
+            break
+
+    if found is not None:
+        return found
+
+    # Final fallback: try constructing a PeerChannel directly. This only works
+    # if the account has access rights *and* some prior interaction is cached.
+    try:
+        return await client.get_entity(PeerChannel(stripped))
+    except Exception as exc:
+        _fatal(
+            "could not resolve channel '" + raw + "': " + str(exc)
+            + "\nMake sure the account running this script is a MEMBER of the"
+            + " channel, then retry. Alternatively pass an @username or an"
+            + " invite link (https://t.me/+…) as CHANNEL."
+        )
 VIDEO_EXTENSIONS = {
     ".mp4", ".m4v", ".mov", ".webm", ".mkv", ".avi", ".gif",
     ".3gp", ".ts", ".mpg", ".mpeg",
@@ -205,10 +263,7 @@ async def run() -> int:
     }
 
     async with TelegramClient(str(session_path), int(API_ID), API_HASH) as client:
-        try:
-            entity = await client.get_entity(CHANNEL)
-        except Exception as exc:
-            _fatal(f"could not resolve channel '{CHANNEL}': {exc}")
+        entity = await _resolve_channel(client, CHANNEL)
 
         title = getattr(entity, "title", None) or getattr(entity, "username", None) or str(entity)
         _log(f"Resolved channel: {title}")
