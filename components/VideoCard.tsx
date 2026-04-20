@@ -22,7 +22,7 @@ import type { VideoDTO, CommentDTO } from "@/types";
 export interface VideoCardHandle {
   pause: () => void;
   play: () => void;
-  setPreload: (v: string) => void;
+  setPreload: (v: "auto" | "metadata" | "none" | "") => void;
   loadBuffer: () => void;
 }
 
@@ -123,7 +123,7 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       play() {
         videoRef.current?.play().catch(() => {});
       },
-      setPreload(v: string) {
+      setPreload(v: "auto" | "metadata" | "none" | "") {
         const el = videoRef.current;
         if (el) el.preload = v;
       },

@@ -67,12 +67,12 @@ function Feed() {
     cardRefs.current.forEach((handle, i) => {
       if (i !== activeIdx) {
         handle.pause();
-        handle.setPreload("none");
+        handle.setPreload("none" as const);
       }
     });
     // Play active with preload=auto
     const active = cardRefs.current.get(activeIdx);
-    active?.setPreload("auto");
+    active?.setPreload("auto" as const);
     active?.play();
     // Buffer next 1 only
     cardRefs.current.get(activeIdx + 1)?.loadBuffer();
