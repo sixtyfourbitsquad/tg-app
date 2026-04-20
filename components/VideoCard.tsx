@@ -15,7 +15,6 @@ import { useInteraction } from "@/hooks/useInteraction";
 import { useWatchEvent } from "@/hooks/useWatchEvent";
 import { AnimatedCount } from "@/components/ui/AnimatedCount";
 import { BottomSheet } from "@/components/ui/BottomSheet";
-import { Tag } from "@/components/ui/Tag";
 import { appShareUrl, telegramStartVideoUrl } from "@/lib/site";
 import type { VideoDTO, CommentDTO } from "@/types";
 
@@ -31,18 +30,11 @@ interface VideoCardProps {
   index: number;
   onBecomeActive?: (index: number) => void;
   muted?: boolean;
-  onMuteToggle?: () => void;
 }
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
-    <svg
-      className="w-7 h-7"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth={1.8}
-      viewBox="0 0 24 24"
-    >
+    <svg width="28" height="28" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
   );
@@ -50,13 +42,7 @@ function HeartIcon({ filled }: { filled: boolean }) {
 
 function BookmarkIcon({ filled }: { filled: boolean }) {
   return (
-    <svg
-      className="w-7 h-7"
-      fill={filled ? "currentColor" : "none"}
-      stroke="currentColor"
-      strokeWidth={1.8}
-      viewBox="0 0 24 24"
-    >
+    <svg width="28" height="28" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
     </svg>
   );
@@ -69,7 +55,7 @@ function formatViews(n: number): string {
 }
 
 export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
-  function VideoCard({ video, index, onBecomeActive, muted = true, onMuteToggle }, ref) {
+  function VideoCard({ video, index, onBecomeActive, muted = true }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [shareOpen, setShareOpen] = useState(false);
@@ -106,44 +92,29 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       }
     }, [isVisible, index, onBecomeActive]);
 
+    // Always muted — no toggle exposed
     useEffect(() => {
       const el = videoRef.current;
-      if (!el) return;
-      el.muted = muted;
-      if (!muted && !el.paused) {
-        el.pause();
-        el.play().catch(() => {});
-      }
-    }, [muted]);
+      if (el) el.muted = true;
+    }, []);
 
     useImperativeHandle(ref, () => ({
-      pause() {
-        videoRef.current?.pause();
-      },
-      play() {
-        videoRef.current?.play().catch(() => {});
-      },
+      pause() { videoRef.current?.pause(); },
+      play() { videoRef.current?.play().catch(() => {}); },
       setPreload(v: "auto" | "metadata" | "none" | "") {
         const el = videoRef.current;
         if (el) el.preload = v;
       },
       loadBuffer() {
         const el = videoRef.current;
-        if (el) {
-          el.preload = "auto";
-          el.load();
-        }
+        if (el) { el.preload = "auto"; el.load(); }
       },
     }));
 
     useEffect(() => {
       const el = videoRef.current;
       return () => {
-        if (el) {
-          el.pause();
-          el.src = "";
-          el.load();
-        }
+        if (el) { el.pause(); el.src = ""; el.load(); }
       };
     }, []);
 
@@ -173,14 +144,8 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       setCommentsLoading(true);
       axios
         .get<{ comments: CommentDTO[]; total: number }>(`/api/videos/${video.id}/comments`)
-        .then((r) => {
-          setComments(r.data.comments ?? []);
-          setCommentTotal(r.data.total ?? 0);
-        })
-        .catch(() => {
-          setComments([]);
-          setCommentTotal(0);
-        })
+        .then((r) => { setComments(r.data.comments ?? []); setCommentTotal(r.data.total ?? 0); })
+        .catch(() => { setComments([]); setCommentTotal(0); })
         .finally(() => setCommentsLoading(false));
     }, [commentsOpen, video.id]);
 
@@ -189,16 +154,11 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
       if (!body || commentPosting) return;
       setCommentPosting(true);
       try {
-        const { data } = await axios.post<{ comment: CommentDTO }>(
-          `/api/videos/${video.id}/comments`,
-          { body }
-        );
+        const { data } = await axios.post<{ comment: CommentDTO }>(`/api/videos/${video.id}/comments`, { body });
         setComments((prev) => [data.comment, ...prev]);
         setCommentTotal((n) => n + 1);
         setCommentText("");
-      } catch {
-        // ignore
-      } finally {
+      } catch { /* ignore */ } finally {
         setCommentPosting(false);
       }
     }, [commentText, commentPosting, video.id]);
@@ -206,89 +166,69 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
     return (
       <div
         ref={containerRef}
-        className="relative w-full snap-start overflow-hidden bg-black flex-shrink-0"
-        style={{ height: "100dvh" }}
+        className="relative snap-start flex-shrink-0 overflow-hidden bg-black"
+        style={{ width: "100vw", height: "100dvh" }}
       >
-        {/* Video — no autoPlay; triggered via JS only */}
+        {/* Video — true fullscreen, no bars */}
         <video
           ref={videoRef}
           src={`/api/redgifs/${video.reddit_id}`}
-          muted={muted}
+          muted
           loop
           playsInline
           preload="none"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="object-cover"
+          style={{ position: "absolute", top: 0, left: 0, width: "100vw", height: "100dvh" }}
           onPlay={onPlay}
           onPause={() => onPause(video.duration)}
           onEnded={() => onEnded(video.duration)}
           poster={video.thumbnail}
         />
 
-        {/* Top gradient for category strip readability */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
-        {/* Bottom gradient overlay: transparent → rgba(0,0,0,0.85) */}
+        {/* Bottom gradient overlay */}
         <div
-          className="absolute inset-x-0 bottom-0 h-2/3 pointer-events-none"
-          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85), transparent)" }}
+          className="absolute inset-x-0 bottom-0 pointer-events-none"
+          style={{
+            height: "60%",
+            background: "linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)",
+          }}
         />
 
-        {/* Bottom-left: title + category + views */}
-        <div className="absolute bottom-6 left-4 right-20 z-10">
-          <Tag label={video.category.name} size="sm" />
-          <h2 className="mt-1.5 text-sm font-semibold text-white leading-snug line-clamp-2 drop-shadow">
+        {/* Bottom-left: category pill + title + views */}
+        <div className="absolute bottom-20 left-4 right-16 z-10">
+          <span
+            className="inline-block px-2 py-0.5 rounded-full text-xs font-semibold text-white capitalize"
+            style={{ background: "#ff3b5c" }}
+          >
+            {video.category.name}
+          </span>
+          <h2
+            className="mt-1.5 leading-snug line-clamp-2 text-white"
+            style={{ fontSize: 14, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
+          >
             {video.title}
           </h2>
-          <p className="mt-1 text-xs text-white/60">
+          <p className="mt-1 text-white/60" style={{ fontSize: 12 }}>
             {formatViews(video.views)} views
           </p>
         </div>
 
-        {/* Right sidebar */}
-        <div className="absolute right-3 bottom-10 z-10 flex flex-col items-center gap-5">
-          {onMuteToggle && (
-            <SidebarAction onPress={onMuteToggle} label={muted ? "Unmute" : "Mute"}>
-              {muted ? (
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <path d="M11 5L6 9H2v6h4l5 4V5z" />
-                  <line x1="23" y1="9" x2="17" y2="15" />
-                  <line x1="17" y1="9" x2="23" y2="15" />
-                </svg>
-              ) : (
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                </svg>
-              )}
-            </SidebarAction>
-          )}
-
+        {/* Right sidebar — like, comment, share, save */}
+        <div className="absolute right-3 bottom-20 z-10 flex flex-col items-center gap-6">
           <SidebarAction onPress={toggleLike} label={liked ? "Unlike" : "Like"} active={liked}>
             <HeartIcon filled={liked} />
             <AnimatedCount value={likeCount} />
           </SidebarAction>
 
           <SidebarAction onPress={() => setCommentsOpen(true)} label="Comments">
-            <svg
-              className="w-7 h-7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
-              viewBox="0 0 24 24"
-            >
+            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            <span className="text-xs">{commentTotal || (commentsOpen ? comments.length : 0)}</span>
+            <span style={{ fontSize: 12 }}>{commentTotal || (commentsOpen ? comments.length : 0)}</span>
           </SidebarAction>
 
           <SidebarAction onPress={handleShare} label="Share">
-            <svg
-              className="w-7 h-7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.8}
-              viewBox="0 0 24 24"
-            >
+            <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
               <circle cx="18" cy="5" r="3" />
               <circle cx="6" cy="12" r="3" />
               <circle cx="18" cy="19" r="3" />
@@ -305,19 +245,11 @@ export const VideoCard = forwardRef<VideoCardHandle, VideoCardProps>(
 
         <BottomSheet open={shareOpen} onClose={() => setShareOpen(false)} title="Share">
           <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={copyLink}
-              className="flex items-center gap-3 py-3 text-sm text-text-primary hover:text-accent transition-colors"
-            >
+            <button type="button" onClick={copyLink} className="flex items-center gap-3 py-3 text-sm text-text-primary hover:text-accent transition-colors">
               <span className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-lg">🔗</span>
               Copy link
             </button>
-            <button
-              type="button"
-              onClick={openTelegramShare}
-              className="flex items-center gap-3 py-3 text-sm text-text-primary hover:text-accent transition-colors"
-            >
+            <button type="button" onClick={openTelegramShare} className="flex items-center gap-3 py-3 text-sm text-text-primary hover:text-accent transition-colors">
               <span className="w-9 h-9 rounded-full bg-[#229ED9]/20 flex items-center justify-center text-lg">✈️</span>
               Open in Telegram
             </button>
@@ -377,13 +309,14 @@ function SidebarAction({ onPress, label, active = false, children }: SidebarActi
     <motion.button
       type="button"
       aria-label={label}
-      onClick={(e) => {
-        e.stopPropagation();
-        onPress();
-      }}
+      onClick={(e) => { e.stopPropagation(); onPress(); }}
       whileTap={{ scale: 0.78 }}
       transition={{ type: "spring", stiffness: 500, damping: 22 }}
-      className={`flex flex-col items-center gap-0.5 focus:outline-none ${active ? "text-accent" : "text-white"}`}
+      className="flex flex-col items-center gap-0.5 focus:outline-none"
+      style={{
+        color: active ? "#ff3b5c" : "#ffffff",
+        filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.7))",
+      }}
     >
       {children}
     </motion.button>

@@ -16,9 +16,9 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-50 flex items-center justify-around h-14"
+      className="fixed bottom-0 inset-x-0 z-50 flex items-center justify-around h-[60px]"
       style={{
-        background: "rgba(0,0,0,0.9)",
+        background: "rgba(0,0,0,0.95)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
       }}
@@ -33,7 +33,7 @@ export function BottomNav() {
             className="flex-1 flex items-center justify-center h-full"
           >
             <Icon
-              size={22}
+              size={24}
               strokeWidth={active ? 2.2 : 1.8}
               className="transition-colors duration-150"
               style={{ color: active ? "#ff3b5c" : "#555555" }}
