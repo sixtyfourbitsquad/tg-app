@@ -1,6 +1,8 @@
 # ─── Stage 1: deps ────────────────────────────────────────────────────────
 FROM node:20-alpine AS deps
-RUN apk add --no-cache libc6-compat
+# openssl is required by Prisma to detect the right engine target during
+# `prisma generate`; libc6-compat smooths over musl vs glibc edges.
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -8,12 +10,14 @@ RUN npm ci --legacy-peer-deps
 
 # ─── Stage 2: builder ─────────────────────────────────────────────────────
 FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client
+# Generate Prisma client (needs openssl installed above so the engine target
+# is detected as linux-musl-openssl-3.0.x instead of the default 1.1.x).
 RUN npx prisma generate
 
 # Build Next.js
@@ -22,6 +26,9 @@ RUN npm run build
 
 # ─── Stage 3: runner ──────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
+# openssl is required at runtime so Prisma's query engine shared library
+# (libquery_engine-linux-musl-openssl-3.0.x.so.node) can dlopen libssl.so.3.
+RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
 ENV NODE_ENV=production
