@@ -15,7 +15,10 @@ VPS_USER="adii"
 VPS_IP="35.200.162.160"
 VPS_PATH="/home/adii/videos/"
 LOCAL_PATH="./downloaded_videos/"
-SSH_KEY="./key.txt"
+# Default to the standard OpenSSH key the user already authorised on the VPS.
+# Override with e.g. `SSH_KEY=./key.txt bash scripts/deploy-videos.sh` if you
+# keep a dedicated deploy key in the repo.
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/id_ed25519}"
 APP_DIR="~/tg-app"        # repo root on the VPS (expanded remotely)
 SSH_PORT="22"
 # ───────────────────────────────────────────────────────────────────
@@ -66,10 +69,14 @@ fi
 
 echo
 echo "[2/2] Registering videos in the database on the VPS…"
+# The app runs entirely in Docker, so we exec the bundled bulk-upload script
+# inside the app container. /app/videos-data is where the host's video dir is
+# bind-mounted (see docker-compose.yml), so the script sees the files we just
+# rsynced and inserts a row per new .mp4.
 ssh "${SSH_OPTS[@]}" "$VPS_USER@$VPS_IP" bash -lc "'
   set -euo pipefail
   cd $APP_DIR
-  npx tsx scripts/bulk-upload.ts $VPS_PATH
+  docker compose exec -T app node scripts/bulk-upload.cjs /app/videos-data
 '"
 
 echo
