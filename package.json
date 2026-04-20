@@ -11,7 +11,7 @@
     "db:generate": "prisma generate",
     "db:seed": "ts-node --project tsconfig.seed.json prisma/seed.ts",
     "db:studio": "prisma studio",
-    "bulk:upload": "tsx --env-file .env scripts/bulk-upload.ts",
+    "bulk:upload": "node --env-file=.env scripts/bulk-upload.cjs",
     "bot": "tsx --env-file .env bot/index.ts"
   },
   "dependencies": {

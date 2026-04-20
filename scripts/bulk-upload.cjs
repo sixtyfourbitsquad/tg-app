@@ -1,73 +1,65 @@
-#!/usr/bin/env -S npx tsx
+#!/usr/bin/env node
 /**
- * Bulk-upload .mp4 files from a local folder into the videos store.
+ * Bulk-upload .mp4 files from a folder into the videos store.
+ *
+ * Kept in plain CommonJS (no TypeScript, no bundler) so it can be copied
+ * verbatim into the runtime Docker image and run with `node` — avoiding the
+ * esbuild/tsx toolchain at build time.
  *
  * Usage:
- *   npx tsx scripts/bulk-upload.ts /path/to/videos/folder
+ *   node scripts/bulk-upload.cjs /path/to/videos/folder
  *
  * For every *.mp4 file in the folder it will:
  *   1. Skip if size > MAX_SIZE_BYTES.
  *   2. Skip if a Video row already exists with the same original_filename.
- *   3. Copy the file into $VIDEOS_DIR (no-op if already there / same size).
+ *   3. Copy the file into $VIDEOS_DIR (no-op if source and dest match).
  *   4. Insert a Video row with url=/videos/<filename>.
  *
- * Env:
+ * Env (injected by docker-compose in prod; use scripts/bulk-upload.sh or
+ * `node --env-file=.env` locally):
  *   DATABASE_URL       required (Prisma)
  *   VIDEOS_DIR         defaults to /home/adii/videos
  *   BULK_MAX_SIZE_MB   overrides the 15MB skip threshold
  *   BULK_BATCH_SIZE    overrides the batch size (default 50)
  */
-import "dotenv/config";
-import {
+"use strict";
+
+const {
   copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
   statSync,
-} from "node:fs";
-import { basename, extname, join, resolve } from "node:path";
-import { PrismaClient } from "@prisma/client";
+} = require("node:fs");
+const { basename, extname, join, resolve } = require("node:path");
+const { PrismaClient } = require("@prisma/client");
 
 const MAX_SIZE_MB = Number(process.env.BULK_MAX_SIZE_MB ?? 15);
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 const BATCH_SIZE = Math.max(1, Number(process.env.BULK_BATCH_SIZE ?? 50));
 const VIDEOS_DIR = resolve(process.env.VIDEOS_DIR ?? "/home/adii/videos");
 
-type Candidate = {
-  source: string;
-  filename: string;
-  size: number;
-};
-
-type SkipReason = "too_large" | "duplicate" | "unsupported_ext";
-
-type Outcome =
-  | { kind: "added"; filename: string }
-  | { kind: "skipped"; filename: string; reason: SkipReason; detail?: string }
-  | { kind: "error"; filename: string; detail: string };
-
-function usage(code: number): never {
+function usage(code) {
   const msg =
-    "Usage: npx tsx scripts/bulk-upload.ts <folder>\n" +
+    "Usage: node scripts/bulk-upload.cjs <folder>\n" +
     "  folder   directory containing .mp4 files to import";
-  if (code === 0) console.log(msg);
-  else console.error(msg);
+  (code === 0 ? console.log : console.error)(msg);
   process.exit(code);
 }
 
-function banner(title: string): void {
+function banner(title) {
   console.log(`\n=== ${title} ===`);
 }
 
-function humanBytes(n: number): string {
+function humanBytes(n) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
-function scanFolder(folder: string): Candidate[] {
+function scanFolder(folder) {
   const entries = readdirSync(folder, { withFileTypes: true });
-  const out: Candidate[] = [];
+  const out = [];
   for (const ent of entries) {
     if (!ent.isFile()) continue;
     if (extname(ent.name).toLowerCase() !== ".mp4") continue;
@@ -84,11 +76,11 @@ function scanFolder(folder: string): Candidate[] {
   return out;
 }
 
-function copyIfNeeded(source: string, dest: string, size: number): void {
+function copyIfNeeded(source, dest, size) {
   if (source === dest) return;
   if (existsSync(dest)) {
     try {
-      if (statSync(dest).size === size) return; // already there, same size
+      if (statSync(dest).size === size) return;
     } catch {
       /* fall through and overwrite */
     }
@@ -96,10 +88,7 @@ function copyIfNeeded(source: string, dest: string, size: number): void {
   copyFileSync(source, dest);
 }
 
-async function existingFilenames(
-  db: PrismaClient,
-  names: string[],
-): Promise<Set<string>> {
+async function existingFilenames(db, names) {
   if (names.length === 0) return new Set();
   const rows = await db.video.findMany({
     where: { original_filename: { in: names } },
@@ -108,11 +97,7 @@ async function existingFilenames(
   return new Set(rows.map((r) => r.original_filename));
 }
 
-async function processOne(
-  db: PrismaClient,
-  c: Candidate,
-  alreadyInDb: Set<string>,
-): Promise<Outcome> {
+async function processOne(db, c, alreadyInDb) {
   if (c.size > MAX_SIZE_BYTES) {
     return {
       kind: "skipped",
@@ -132,7 +117,7 @@ async function processOne(
     return {
       kind: "error",
       filename: c.filename,
-      detail: `copy failed: ${(err as Error).message}`,
+      detail: `copy failed: ${err.message}`,
     };
   }
 
@@ -152,14 +137,14 @@ async function processOne(
     return {
       kind: "error",
       filename: c.filename,
-      detail: `db insert failed: ${(err as Error).message}`,
+      detail: `db insert failed: ${err.message}`,
     };
   }
 
   return { kind: "added", filename: c.filename };
 }
 
-async function main(): Promise<void> {
+async function main() {
   const arg = process.argv[2];
   if (!arg || arg === "-h" || arg === "--help") usage(arg ? 0 : 1);
 
@@ -168,7 +153,7 @@ async function main(): Promise<void> {
   try {
     stat = statSync(folder);
   } catch (err) {
-    console.error(`Cannot read ${folder}: ${(err as Error).message}`);
+    console.error(`Cannot read ${folder}: ${err.message}`);
     process.exit(1);
   }
   if (!stat.isDirectory()) {
@@ -197,19 +182,14 @@ async function main(): Promise<void> {
   const db = new PrismaClient({ log: ["error", "warn"] });
 
   const tallies = { added: 0, skipped: 0, errors: 0 };
-  const errors: { filename: string; detail: string }[] = [];
-  const skips: Record<SkipReason, number> = {
-    too_large: 0,
-    duplicate: 0,
-    unsupported_ext: 0,
-  };
+  const errors = [];
+  const skips = { too_large: 0, duplicate: 0, unsupported_ext: 0 };
 
   try {
     let processed = 0;
     for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
       const batch = candidates.slice(i, i + BATCH_SIZE);
 
-      // One-shot lookup of existing rows for this batch keeps DB round-trips low.
       const alreadyInDb = await existingFilenames(
         db,
         batch.map((c) => c.filename),

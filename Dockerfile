@@ -32,19 +32,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV VIDEOS_DIR=/app/videos-data
 RUN npm run build
 
-# Bundle the bulk-upload script into a single, self-contained CommonJS file so
-# we can run it inside the slim runner image with plain `node` (no tsx/ts-node,
-# no registry fetch). @prisma/client is externalised because the runner already
-# has the generated client on disk — bundling it would shadow the engines.
-RUN node_modules/.bin/esbuild scripts/bulk-upload.ts \
-  --bundle \
-  --platform=node \
-  --target=node20 \
-  --format=cjs \
-  --external:@prisma/client \
-  --external:@prisma/engines \
-  --outfile=scripts/bulk-upload.cjs
-
 # ─── Stage 3: runner ──────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 # openssl is required at runtime so Prisma's query engine shared library
