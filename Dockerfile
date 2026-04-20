@@ -20,8 +20,16 @@ COPY . .
 # is detected as linux-musl-openssl-3.0.x instead of the default 1.1.x).
 RUN npx prisma generate
 
-# Build Next.js
+# Build Next.js.
+#
+# NOTE: Next.js inlines `process.env.X` into compiled server bundles when X is
+# resolvable at build time. For the videos route in particular, an unresolved
+# VIDEOS_DIR got folded to its fallback string ("/home/adii/videos") and no
+# amount of runtime env tweaking could undo it. Freeze the canonical Docker
+# path at build time so the inlined value matches what the container actually
+# mounts at runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV VIDEOS_DIR=/app/videos-data
 RUN npm run build
 
 # ─── Stage 3: runner ──────────────────────────────────────────────────────
