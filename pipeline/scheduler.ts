@@ -10,8 +10,12 @@ import { logger } from "../lib/logger";
 const prisma = new PrismaClient();
 const CRON_SCHEDULE = process.env.PIPELINE_CRON ?? "0 */6 * * *";
 
+function tagToSlug(tag: string): string {
+  return tag.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
 async function resolveOrCreateCategory(tag: string): Promise<string> {
-  const slug = tag.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const slug = tagToSlug(tag);
   const cat = await prisma.category.upsert({
     where: { slug },
     update: {},
@@ -56,6 +60,7 @@ export async function runPipeline(): Promise<{
 
   for (const tag of tags) {
     logger.info(`Fetching tag: ${tag}`);
+    const categorySlug = tagToSlug(tag);
 
     let gifs;
     try {
@@ -69,18 +74,21 @@ export async function runPipeline(): Promise<{
     }
 
     for (const gif of gifs) {
+      // Composite key: gifId__categorySlug — same gif can exist per-category
+      const compositeId = `${gif.id}__${categorySlug}`;
+
       const exists = await prisma.video.findUnique({
-        where: { reddit_id: gif.id },
+        where: { reddit_id: compositeId },
         select: { id: true },
       });
       if (exists) {
-        logger.debug(`Skipping duplicate ${gif.id}`);
+        logger.debug(`Skipping duplicate ${compositeId}`);
         continue;
       }
 
       try {
         const processed = await processGif(gif, tag);
-        const category_id = await resolveOrCreateCategory(processed.tag);
+        const category_id = await resolveOrCreateCategory(tag);
 
         await prisma.video.create({
           data: {
@@ -89,12 +97,13 @@ export async function runPipeline(): Promise<{
             title: processed.title,
             category_id,
             duration: processed.duration,
-            reddit_id: processed.redgifs_id,
+            views: gif.views ?? 0,
+            reddit_id: compositeId, // composite so same gif can appear in multiple categories
           },
         });
 
         videos_fetched++;
-        logger.info(`Saved video ${gif.id} for tag "${tag}"`);
+        logger.info(`Saved ${gif.id} → category "${categorySlug}"`);
       } catch (err) {
         const msg = `Failed to process ${gif.id}: ${err instanceof Error ? err.message : err}`;
         logger.error(msg);
@@ -104,11 +113,7 @@ export async function runPipeline(): Promise<{
   }
 
   const status: "success" | "partial" | "failed" =
-    errors.length === 0
-      ? "success"
-      : videos_fetched > 0
-      ? "partial"
-      : "failed";
+    errors.length === 0 ? "success" : videos_fetched > 0 ? "partial" : "failed";
 
   await prisma.pipelineLog.create({
     data: { status, videos_fetched, errors },

@@ -47,7 +47,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  // Strip composite suffix added by pipeline: "gifId__category-slug" → "gifId"
+  const id = rawId.includes("__") ? rawId.split("__")[0] : rawId;
 
   try {
     let token = await getToken();
